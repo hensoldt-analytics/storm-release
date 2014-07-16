@@ -125,7 +125,11 @@ function Install(
 		Write-Log "Node storm Role Services: $roles"
 
 		### Verify that roles are in the supported set	
+<<<<<<< HEAD
 		CheckRole $roles @("supervisor" "nimbus")
+=======
+		CheckRole $roles @("supervisor", "nimbus", "ui", "logviewer", "drpc")
+>>>>>>> 4f5cf1b... STORM-2: Add drpc component to storm's install scripts
 		Write-Log "Role : $roles"
 		foreach( $service in empty-null ($roles -Split('\s+')))
 		{
@@ -330,6 +334,55 @@ function Configure(
     }
 }
 
+<<<<<<< HEAD
+=======
+### Return default Storm configuration which will be overwritten
+### by user provided values
+function GetDefaultConfig()
+{
+    return @{"logviewer.port" = 8081;
+        "storm.messaging.transport" = "backtype.storm.messaging.netty.Context";
+        "storm.messaging.netty.buffer_size" = 16384;
+        "storm.messaging.netty.max_retries" = 10;
+        "storm.messaging.netty.min_wait_ms" = 1000;
+        "storm.messaging.netty.max_wait_ms" = 5000;
+        "ui.port" = 8772;
+        "drpc.port" = 3772}
+}
+
+### Helper routine that write the given fileName Yaml file with the given
+### key/value configuration values.
+function WriteYamlConfigFile(
+    [String]
+    [parameter( Position=0, Mandatory=$true )]
+    $fileName,
+    [hashtable]
+    [parameter( Position=1, Mandatory=$true )]
+    $configs = @{}
+)
+{
+    $content = ""
+    foreach ($item in $configs.GetEnumerator())
+    {
+        if (($item.Key.CompareTo("storm.zookeeper.servers") -eq 0) -or ($item.Key.CompareTo("drpc.servers") -eq 0))
+        {
+            # zookeeper and drpc servers need to be configured as a list
+            $content += $item.Key + ": " + "`r`n"
+            $hosts = ($item.Value.Split(",") | foreach { $_.Trim() })
+            foreach ($shost in $hosts)
+            {
+                $content += ('- "' + $shost + '"'+ "`r`n")
+            }
+        }
+        else
+        {
+            $content += $item.Key + ": " + $item.Value + "`r`n"
+        }
+    }
+    Set-Content $fileName $content -Force
+}
+
+>>>>>>> 4f5cf1b... STORM-2: Add drpc component to storm's install scripts
 
 ### Helper routing that converts a $null object to nothing. Otherwise, iterating over
 ### a $null object with foreach results in a loop with one $null element.
