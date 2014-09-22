@@ -34,6 +34,15 @@
 @rem   STORM_ROOT_LOGGER The root appender. Default is INFO,console
 @rem
 
+@rem if running as a service, log to (daily rolling) files instead of console
+if "%1" == "--service" (
+  if not defined HADOOP_ROOT_LOGGER (
+    set STORM_ROOT_LOGGER=INFO,DRFA
+  )
+  set service_entry=true
+  shift
+)
+
 :main
   setlocal enabledelayedexpansion
 
@@ -45,7 +54,10 @@
   )
 
   call :make_command_arguments %*
-
+  
+  if not defined STORM_LOG_FILE (
+    set STORM_LOG_FILE=-Dlogfile.name=%storm-command%.log
+  )
   set shellcommands=classpath help version
   for %%i in ( %shellcommands% ) do (
     if %storm-command% == %%i set shellcommand=true
@@ -69,16 +81,7 @@
     set STORM_OPTS=%STORM_CLIENT_OPTS% %STORM_OPTS% -Dstorm.jar=%2
     set CLASSPATH=%CLASSPATH%;%2
     set CLASS=%3
-    set args=%4
-    shift
-    :start
-    if [%4] == [] goto done
-    set args=%args% %4
-    shift
-    goto start
-
-    :done
-    set storm-command-arguments=%args%
+    set storm-command-arguments=%4 %5 %6 %7 %8 %9
   )
   
   if not defined STORM_LOG_FILE (
@@ -89,9 +92,13 @@
     %JAVA% %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
   )
   set path=%PATH%;%STORM_BIN_DIR%;%STORM_SBIN_DIR%
-  call start /b "%storm-command%" "%JAVA%" %JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% %CLASS% %storm-command-arguments%
+  set java_arguments=%JAVA_HEAP_MAX% %STORM_OPTS% %STORM_LOG_FILE% -classpath %CLASSPATH% %CLASS% %storm-command-arguments%
+  if defined service_entry (
+    call :makeServiceXml %java_arguments%
+  ) else (
+    call %JAVA% %java_arguments%
+  )
   goto :eof
-
 
 :activate
   set CLASS=backtype.storm.command.activate
@@ -224,20 +231,25 @@
   goto :eof
 
 :make_command_arguments
-  if "%2" == "" goto :eof
-  set _count=0
-  set _shift=1
-  for %%i in (%*) do (
-    set /a _count=!_count!+1
-    if !_count! GTR %_shift% ( 
-	if not defined _arguments (
-	  set _arguments=%%i
-	) else (
-          set _arguments=!_arguments! %%i
-	)
-    )
+  if [%2] == [] goto :eof
+  if "%1" == "--service" (
+    shift
   )
-  set storm-command-arguments=%_arguments%
+  shift
+  set _stormarguments=
+
+  :MakeCmdArgsLoop 
+  if [%1]==[] goto :EndLoop 
+
+  if not defined _stormarguments (
+    set _stormarguments=%1
+  ) else (
+    set _stormarguments=!_stormarguments! %1
+  )
+  shift
+  goto :MakeCmdArgsLoop 
+  :EndLoop
+  set storm-command-arguments=%_stormarguments%
   goto :eof
   
 :set_childopts
@@ -257,8 +269,10 @@
   @echo   jar ^<jar^>          run a jar file
   @echo   kill                 kills the topology with the name topology-name
   @echo   list                 list the running topologies and their statuses
+  @echo   logviewer            launches the log viewer daemon
   @echo   nimbus               launches the nimbus daemon
   @echo   rebalance            redistribute or change the parallelism of a running topology
+  @echo   remoteconfvalue      prints value for conf-name from cluster config ../conf/storm.yaml merged with defaults.yaml
   @echo   repl                 opens up a Clojure REPL
   @echo   remoteconfvalue      prints value for conf-name from cluster config ../conf/storm.yaml merged with defaults.yaml
   @echo   shell                storm shell
