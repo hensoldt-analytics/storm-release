@@ -67,6 +67,7 @@ public class TridentSequenceTopology {
                 .withFsUrl(hdfsUrl)
                 .withConfigKey("hdfs.config")
                 .addRotationAction(new MoveFileAction().toDestination("/tmp/dest2/"));
+
         StateFactory factory = new HdfsStateFactory().withOptions(seqOpts);
 
         TridentState state = stream
