@@ -261,7 +261,13 @@ def get_storm_config_json():
         all_args.append("--user")
         all_args.append(CMD_OPTS['user'])
 
-    os.spawnvp(os.P_WAIT,SLIDER_CMD, all_args)
+    #os.spawnvp(os.P_WAIT,SLIDER_CMD, all_args)
+    cmd = [SLIDER_CMD] + all_args[1:]
+
+    if is_windows():
+        cmd = ['python'] + cmd
+
+    sub.call(cmd)
     if not os.path.exists(CONFFILE):
         print "Failed to read slider deployed storm config"
         sys.exit(1)
