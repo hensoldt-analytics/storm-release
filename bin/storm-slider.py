@@ -49,7 +49,15 @@ if  SLIDER_DIR == None or (not os.path.exists(SLIDER_DIR)):
     sys.exit(1)
 
 USER_CONF_DIR = os.path.expanduser("~/.storm")
-STORM_DIR = os.getenv('STORM_BASE_DIR', None)
+
+if os.getenv('STORM_BASE_DIR', None) != None:
+    STORM_DIR = os.getenv('STORM_BASE_DIR', None)
+elif os.getenv('STORM_HOME', None) != None:
+    STORM_DIR = os.getenv('STORM_HOME', None)
+else:
+    print "Either STORM_BASE_DIR or STORM_HOME must be set."
+    sys.exit(1)
+
 CMD_OPTS = {}
 CONFIG_OPTS = []
 JAR_JVM_OPTS = shlex.split(os.getenv('STORM_JAR_JVM_OPTS', ''))
@@ -84,7 +92,9 @@ def get_jars_full(adir):
 def get_classpath(extrajars):
     ret = (get_jars_full(os.path.join(STORM_DIR ,"lib")))
     ret.extend(extrajars)
-    return normclasspath(":".join(ret))
+
+    sep = ";" if is_windows() else ":"
+    return normclasspath(sep.join(ret))
 
 def print_remoteconfvalue(name):
     """Syntax: [storm-slider --app remoteconfvalue conf-name]
@@ -246,7 +256,12 @@ def quicklinks():
     if 'user' in CMD_OPTS.keys():
         all_args.append( "--user "+CMD_OPTS['user'])
 
-    os.spawnvp(os.P_WAIT,SLIDER_CMD, all_args)
+    #os.spawnvp(os.P_WAIT,SLIDER_CMD, all_args)
+    cmd = [SLIDER_CMD] + all_args[1:]
+    if is_windows():
+        cmd = ['python'] + cmd
+
+    sub.call(cmd)
 
 def get_storm_config_json():
     global CMD_OPTS
@@ -318,6 +333,7 @@ def parse_config_opts(args):
     curr = args[:]
     curr.reverse()
     global CMD_OPTS
+    global CONFIG_OPTS
     args_list = []
     while len(curr) > 0:
         token = curr.pop()
@@ -325,6 +341,8 @@ def parse_config_opts(args):
             CMD_OPTS['app_name'] = curr.pop() if (len(curr) != 0) else None
         elif token == "--user":
             CMD_OPTS['user'] =  curr.pop() if (len(curr) != 0) else None
+        elif token == "-c" and len(curr) != 0:
+            CONFIG_OPTS.append(curr.pop())
         else:
             args_list.append(token)
     return args_list
