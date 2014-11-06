@@ -112,11 +112,18 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
         "-cp", get_classpath(extrajars),
     ] + jvmopts + [klass] + list(args)
     print "Running: " + " ".join(all_args)
+<<<<<<< HEAD
     if fork:
         os.spawnvp(os.P_WAIT, JAVA_CMD, all_args)
     else:
         os.execvp(JAVA_CMD, all_args) # replaces the current process and never
             # returns
+=======
+    if is_windows():
+        sub.call([JAVA_CMD] + all_args[1:])
+    else:
+        os.execvp(JAVA_CMD, all_args) # replaces the current process and never returns
+>>>>>>> cae1544... BUG-26883. Storm-slider client Windows has ntpath.py splitdrive error.
 
 def jar(jarfile, klass, *args):
     """Syntax: [storm jar topology-jar-path class ...]
