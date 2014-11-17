@@ -120,6 +120,8 @@
 (defn ui-template [body]
   (html4
    [:head
+    [:meta
+     {:http-equiv "content-type", :content "text/html;charset=utf-8"}]
     [:title "Storm UI"]
     (include-css "/css/bootstrap-1.4.0.css")
     (include-css "/css/style.css")
