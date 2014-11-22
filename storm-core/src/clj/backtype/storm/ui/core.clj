@@ -32,6 +32,7 @@
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
             [ring.util.response :as resp]
+            [ring.util.codec :as codec]
             [backtype.storm [thrift :as thrift]])
   (:import [org.apache.commons.lang StringEscapeUtils])
   (:gen-class))
@@ -646,8 +647,8 @@
   [:input {:type "button"
            :value action
            (if enabled :enabled :disabled) ""
-           :onclick (str "confirmAction('" 
-                         (StringEscapeUtils/escapeJavaScript id) "', '" 
+           :onclick (str "confirmAction('"
+                         (StringEscapeUtils/escapeJavaScript id) "', '"
                          (StringEscapeUtils/escapeJavaScript name) "', '"
                          command "', " is-wait ", " default-wait ")")}])
 
@@ -1035,14 +1036,14 @@
             name (.get_name tplg)]
         (.activate nimbus name)
         (log-message "Activating topology '" name "'")))
-    (resp/redirect (str "/topology/" id)))
+    (resp/redirect (str "/topology/" (codec/url-encode id))))
   (POST "/topology/:id/deactivate" [id]
     (with-nimbus nimbus
       (let [tplg (.getTopologyInfo ^Nimbus$Client nimbus id)
             name (.get_name tplg)]
         (.deactivate nimbus name)
         (log-message "Deactivating topology '" name "'")))
-    (resp/redirect (str "/topology/" id)))
+    (resp/redirect (str "/topology/" (codec/url-encode id))))
   (POST "/topology/:id/rebalance/:wait-time" [id wait-time]
     (with-nimbus nimbus
       (let [tplg (.getTopologyInfo ^Nimbus$Client nimbus id)
@@ -1051,7 +1052,7 @@
         (.set_wait_secs options (Integer/parseInt wait-time))
         (.rebalance nimbus name options)
         (log-message "Rebalancing topology '" name "' with wait time: " wait-time " secs")))
-    (resp/redirect (str "/topology/" id)))
+    (resp/redirect (str "/topology/" (codec/url-encode id))))
   (POST "/topology/:id/kill/:wait-time" [id wait-time]
     (with-nimbus nimbus
       (let [tplg (.getTopologyInfo ^Nimbus$Client nimbus id)
@@ -1060,7 +1061,7 @@
         (.set_wait_secs options (Integer/parseInt wait-time))
         (.killTopologyWithOpts nimbus name options)
         (log-message "Killing topology '" name "' with wait time: " wait-time " secs")))
-    (resp/redirect (str "/topology/" id)))
+    (resp/redirect (str "/topology/" (codec/url-encode id))))
   (route/resources "/")
   (route/not-found "Page not found"))
 
