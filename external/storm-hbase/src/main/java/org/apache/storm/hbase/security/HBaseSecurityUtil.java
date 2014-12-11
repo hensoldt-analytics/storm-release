@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static backtype.storm.Config.TOPOLOGY_AUTO_CREDENTIALS;
 
