@@ -60,11 +60,11 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String STORM_MESSAGING_NETTY_BUFFER_SIZE = "storm.messaging.netty.buffer_size";
     public static final Object STORM_MESSAGING_NETTY_BUFFER_SIZE_SCHEMA = ConfigValidation.IntegerValidator;
-    
+
     /**
      * Netty based messaging: Sets the backlog value to specify when the channel binds to a local address
      */
-    public static final String STORM_MESSAGING_NETTY_SOCKET_BACKLOG = "storm.messaging.netty.socket.backlog"; 
+    public static final String STORM_MESSAGING_NETTY_SOCKET_BACKLOG = "storm.messaging.netty.socket.backlog";
     public static final Object STORM_MESSAGING_NETTY_SOCKET_BACKLOG_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
@@ -307,16 +307,16 @@ public class Config extends HashMap<String, Object> {
     public static final Object STORM_NIMBUS_RETRY_INTERVAL_CEILING_SCHEMA = Number.class;
 
     /**
-     * The host that the master server is running on.
-     */
-    public static final String NIMBUS_HOST = "nimbus.host";
-    public static final Object NIMBUS_HOST_SCHEMA = String.class;
-
-    /**
      * The Nimbus transport plug-in for Thrift client/server communication
      */
     public static final String NIMBUS_THRIFT_TRANSPORT_PLUGIN = "nimbus.thrift.transport";
     public static final Object NIMBUS_THRIFT_TRANSPORT_PLUGIN_SCHEMA = String.class;
+
+    /**
+     * List of seed nimbus hosts:port to use for leader nimbus discovery.
+     */
+    public static final String NIMBUS_SEEDS = "nimbus.seeds";
+    public static final Object NIMBUS_SEEDS_SCHEMA = ConfigValidation.StringsValidator;
 
     /**
      * Which port the Thrift interface of Nimbus should run on. Clients should
@@ -337,6 +337,20 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String NIMBUS_ADMINS = "nimbus.admins";
     public static final Object NIMBUS_ADMINS_SCHEMA = ConfigValidation.StringsValidator;
+
+    /**
+     * A list of users that are the only ones allowed to run user operation on storm cluster.
+     * To use this set nimbus.authorizer to backtype.storm.security.auth.authorizer.SimpleACLAuthorizer
+     */
+    public static final String NIMBUS_USERS = "nimbus.users";
+    public static final Object NIMBUS_USERS_SCHEMA = ConfigValidation.StringsValidator;
+
+    /**
+     * A list of groups , users belong to these groups are the only ones allowed to run user operation on storm cluster.
+     * To use this set nimbus.authorizer to backtype.storm.security.auth.authorizer.SimpleACLAuthorizer
+     */
+    public static final String NIMBUS_GROUPS = "nimbus.groups";
+    public static final Object NIMBUS_GROUPS_SCHEMA = ConfigValidation.StringsValidator;
 
     /**
      * A list of users that run the supervisors and should be authorized to interact with
@@ -441,6 +455,20 @@ public class Config extends HashMap<String, Object> {
     public static final String NIMBUS_AUTHORIZER = "nimbus.authorizer";
     public static final Object NIMBUS_AUTHORIZER_SCHEMA = String.class;
 
+
+    /**
+     * Impersonation user ACL config entries.
+     */
+    public static final String NIMBUS_IMPERSONATION_AUTHORIZER = "nimbus.impersonation.authorizer";
+    public static final Object NIMBUS_IMPERSONATION_AUTHORIZER_SCHEMA = String.class;
+
+
+    /**
+     * Impersonation user ACL config entries.
+     */
+    public static final String NIMBUS_IMPERSONATION_ACL = "nimbus.impersonation.acl";
+    public static final Object NIMBUS_IMPERSONATION_ACL_SCHEMA = ConfigValidation.MapOfStringToMapValidator;
+
     /**
      * How often nimbus should wake up to renew credentials if needed.
      */
@@ -465,7 +493,7 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String UI_HOST = "ui.host";
     public static final Object UI_HOST_SCHEMA = String.class;
-    
+
     /**
      * Storm UI binds to this port.
      */
@@ -732,6 +760,12 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String SUPERVISOR_WORKER_TIMEOUT_SECS = "supervisor.worker.timeout.secs";
     public static final Object SUPERVISOR_WORKER_TIMEOUT_SECS_SCHEMA = ConfigValidation.IntegerValidator;
+
+    /**
+     * How many seconds to sleep for before shutting down threads on worker
+     */
+    public static final String SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS = "supervisor.worker.shutdown.sleep.secs";
+    public static final Object SUPERVISOR_WORKER_SHUTDOWN_SLEEP_SECS_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
      * How long a worker can go without heartbeating during the initial launch before
@@ -1251,6 +1285,36 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String TOPOLOGY_ISOLATED_MACHINES = "topology.isolate.machines";
     public static final Object TOPOLOGY_ISOLATED_MACHINES_SCHEMA = Number.class;
+
+    /**
+     * Which implementation of {@link backtype.storm.codedistributor.ICodeDistributor} should be used by storm for code
+     * distribution.
+     */
+    public static final String STORM_CODE_DISTRIBUTOR_CLASS = "storm.codedistributor.class";
+    public static final Object STORM_CODE_DISTRIBUTOR_CLASS_SCHEMA = String.class;
+
+    /**
+     * Minimum number of nimbus hosts where the code must be replicated before leader nimbus
+     * is allowed to perform topology activation tasks like setting up heartbeats/assignments
+     * and marking the topology as active. default is 0.
+     */
+    public static final String TOPOLOGY_MIN_REPLICATION_COUNT = "topology.min.replication.count";
+    public static final Object TOPOLOGY_MIN_REPLICATION_COUNT_SCHEMA = Number.class;
+
+    /**
+     * Maximum wait time for the nimbus host replication to achieve the nimbus.min.replication.count.
+     * Once this time is elapsed nimbus will go ahead and perform topology activation tasks even
+     * if required nimbus.min.replication.count is not achieved. The default is 0 seconds, a value of
+     * -1 indicates to wait for ever.
+     */
+    public static final String TOPOLOGY_MAX_REPLICATION_WAIT_TIME_SEC = "nimbus.max.replication.wait.time.sec";
+    public static final Object TOPOLOGY_MAX_REPLICATION_WAIT_TIME_SEC_SCHEMA = Number.class;
+
+    /**
+     * How often nimbus's background thread to sync code for missing topologies should run.
+     */
+    public static final String NIMBUS_CODE_SYNC_FREQ_SECS = "nimbus.code.sync.freq.secs";
+    public static final Object NIMBUS_CODE_SYNC_FREQ_SECS_SCHEMA = ConfigValidation.IntegerValidator;
 
     public static void setClasspath(Map conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);

@@ -32,6 +32,18 @@ You can use a tool such as `curl` to talk to the REST API:
     # Note: We assume ui.port is configured to the default value of 8080.
     $ curl http://<ui-host>:8080/api/v1/cluster/configuration
 
+##Impersonating a user in secure environment
+In a secure environment an authenticated user can impersonate another user. To impersonate a user the caller must pass
+`doAsUser` param or header with value set to the user that the request needs to be performed as. Please see SECURITY.MD
+to learn more about how to setup impersonation ACLs and authorization. The rest API uses the same configs and acls that
+are used by nimbus.
+
+Examples:
+
+```no-highlight
+ 1. http://ui-daemon-host-name:8080/api/v1/topology/wordcount-1-1425844354\?doAsUser=testUSer1
+ 2. curl 'http://localhost:8080/api/v1/topology/wordcount-1-1425844354/activate' -X POST -H 'doAsUser:testUSer1'
+```
 
 ## GET Operations
 
@@ -126,6 +138,37 @@ Sample response:
 }
 ```
 
+### /api/v1/nimbus/summary (GET)
+
+Returns summary information for all nimbus hosts.
+
+Response fields:
+
+|Field  |Value|Description|
+|---	|---	|---
+|host| String | Nimbus' host name|
+|port| int| Nimbus' port number|
+|nimbusUpTime| String| Shows since how long the nimbus has been running|
+|nimbusLogLink| String| Logviewer url to view the nimbus.log|
+|version| String| Version of storm this nimbus host is running|
+
+Sample response:
+
+```json
+{
+    "nimbuses":[
+        {
+            "host":"192.168.202.1",
+            "port":6627,
+            "nimbusLogLink":"http:\/\/192.168.202.1:8000\/log?file=nimbus.log",
+            "isLeader":true,
+            "version":"0.10.0-SNAPSHOT",
+            "nimbusUpTime":"3m 33s"
+        }
+    ]
+}
+```
+
 ### /api/v1/topology/summary (GET)
 
 Returns summary information for all topologies.
@@ -141,7 +184,7 @@ Response fields:
 |tasksTotal| Integer |Total number of tasks for this topology|
 |workersTotal| Integer |Number of workers used for this topology|
 |executorsTotal| Integer |Number of executors used for this topology|
-
+|replicationCount| Integer |Number of nimbus hosts on which this topology code is replicated|
 Sample response:
 
 ```json
@@ -154,7 +197,8 @@ Sample response:
             "uptime": "6m 5s",
             "tasksTotal": 28,
             "workersTotal": 3,
-            "executorsTotal": 28
+            "executorsTotal": 28,
+            "replicationCount": 1
         }
     ]
 }
@@ -220,6 +264,7 @@ Response fields:
 |bolts.errorWorkerLogLink| String | Link to the worker log that reported the exception |
 |bolts.emitted| Long |Number of tuples emitted|
 |antiForgeryToken| String | CSRF token|
+|replicationCount| Integer |Number of nimbus hosts on which this topology code is replicated|
 
 Caution: users need to unescape the antiForgeryToken value before using this token to make POST calls(simple-json escapes forward slashes)
 [ISSUE-8](https://code.google.com/p/json-simple/issues/detail?id=8)
@@ -369,7 +414,8 @@ Sample response:
         "supervisor.enable": true,
         "storm.messaging.netty.server_worker_threads": 1
     },
-    "antiForgeryToken": "lAFTN\/5iSedRLwJeUNqkJ8hgYubRl2OxjXGoDf9A4Bt1nZY3rvJW0\/P4zqu9yAk\/LvDhlmn7gigw\/z8C"
+    "antiForgeryToken": "lAFTN\/5iSedRLwJeUNqkJ8hgYubRl2OxjXGoDf9A4Bt1nZY3rvJW0\/P4zqu9yAk\/LvDhlmn7gigw\/z8C",
+    "replicationCount": 1
 }
 ```
 
