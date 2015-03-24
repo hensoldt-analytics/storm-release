@@ -165,6 +165,8 @@
         <module>external/storm-hive</module>
         <module>external/storm-jdbc</module>
         <module>external/storm-redis</module>
+        <module>external/storm-jms</module>
+        <module>external/storm-cassandra</module>
     </modules>
 
     <scm>
