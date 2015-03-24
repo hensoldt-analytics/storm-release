@@ -137,6 +137,58 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-jmxetric</directory>
+            <outputDirectory>external/storm-jmxetric</outputDirectory>
+            <includes>
+                <include>*/**</include>
+            </includes>
+        </fileSet>
+               <fileSet>
+           <directory>${project.basedir}/../../external/storm-jms/target</directory>
+           <outputDirectory>external/storm-jms</outputDirectory>
+           <includes>
+                <include>storm*jar</include>
+           </includes>
+       </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-jms</directory>
+            <outputDirectory>external/storm-jms</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+
+       <fileSet>
+           <directory>${project.basedir}/../../external/storm-cassandra/target</directory>
+           <outputDirectory>external/storm-cassandra</outputDirectory>
+           <includes>
+                <include>storm*jar</include>
+           </includes>
+       </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-cassandra</directory>
+            <outputDirectory>external/storm-cassandra</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+
+        <fileSet>
+           <directory>${project.basedir}/../../external/storm-redis/target</directory>
+           <outputDirectory>external/storm-redis</outputDirectory>
+           <includes>
+                <include>storm*jar</include>
+           </includes>
+       </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-redis</directory>
+            <outputDirectory>external/storm-redis</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+
     </fileSets>
 
     <files>
