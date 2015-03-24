@@ -29,7 +29,8 @@
            [org.eclipse.jetty.server.ssl SslSocketConnector]
            [org.eclipse.jetty.servlet ServletHolder FilterMapping]
            [org.eclipse.jetty.server DispatcherType]
-           [org.eclipse.jetty.servlets CrossOriginFilter])
+           [org.eclipse.jetty.servlets CrossOriginFilter]
+           [org.eclipse.jetty.util.ssl SslContextFactory])
   (:require [ring.util servlet])
   (:require [compojure.route :as route]
             [compojure.handler :as handler]))
@@ -135,16 +136,17 @@
 (defn unauthorized-user-html [user]
   [[:h2 "User '" (escape-html user) "' is not authorized."]])
 
-(defn- mk-ssl-connector [port ks-path ks-password ks-type]
-  (doto (SslSocketConnector.)
-    (.setExcludeCipherSuites (into-array String ["SSL_RSA_WITH_RC4_128_MD5" "SSL_RSA_WITH_RC4_128_SHA"]))
-    (.setExcludeProtocols (into-array String ["SSLv3"]))
-    (.setAllowRenegotiate false)
-    (.setKeystore ks-path)
-    (.setKeystoreType ks-type)
-    (.setKeyPassword ks-password)
-    (.setPassword ks-password)
-    (.setPort port)))
+(defn- mk-ssl-connector [port ks-path ks-password ks-type key-password]
+  (let [sslContextFactory (doto (SslContextFactory.)
+                            (.setExcludeCipherSuites (into-array String ["SSL_RSA_WITH_RC4_128_MD5" "SSL_RSA_WITH_RC4_128_SHA"]))
+                            (.setExcludeProtocols (into-array String ["SSLv3"]))
+                            (.setAllowRenegotiate false)
+                            (.setKeyStorePath ks-path)
+                            (.setKeyStoreType ks-type)
+                            (.setKeyStorePassword ks-password)
+                            (.setKeyManagerPassword key-password))]
+    (doto (SslSocketConnector. sslContextFactory)
+      (.setPort port))))
 
 (defn config-ssl [server port ks-path ks-password ks-type]
   (when (> port 0)
@@ -180,6 +182,13 @@
    :status 400
    :body (.getMessage ex)})
 
+(defn- remove-non-ssl-connectors [server]
+  (doseq [c (.getConnectors server)]
+    (when-not (or (nil? c) (instance? SslSocketConnector c))
+      (.removeConnector server c)
+      ))
+  server)
+
 ;; Modified from ring.adapter.jetty 1.3.0
 (defn- jetty-create-server
   "Construct a Jetty Server instance."
@@ -190,7 +199,9 @@
                     (.setMaxIdleTime (options :max-idle-time 200000)))
         server    (doto (Server.)
                     (.addConnector connector)
-                    (.setSendDateHeader true))]
+                    (.setSendDateHeader true))
+        https-port (options :https-port)]
+    (if (and (not-nil? https-port) (> https-port 0)) (remove-non-ssl-connectors server))
     server))
 
 (defn storm-run-jetty
