@@ -747,7 +747,7 @@
         "spouts" (spout-comp id spout-comp-summs (.get_errors summ) window include-sys?)
         "bolts" (bolt-comp id bolt-comp-summs (.get_errors summ) window include-sys?)
         "configuration" topology-conf
-        "antiForgeryToken" *anti-forgery-token*
+        "visualizationTable" (stream-boxes visualizer-data)
         "replicationCount" replication-count}))))
 
 (defn spout-output-stats

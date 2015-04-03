@@ -410,6 +410,7 @@ Sample response:
         "storm.messaging.netty.server_worker_threads": 1
     },
     "replicationCount": 1
+    }
 }
 ```
 
