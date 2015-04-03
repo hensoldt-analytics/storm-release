@@ -25,7 +25,6 @@
   (:use [backtype.storm.ui helpers])
   (:use [backtype.storm.daemon [common :only [ACKER-COMPONENT-ID ACKER-INIT-STREAM-ID ACKER-ACK-STREAM-ID
                                               ACKER-FAIL-STREAM-ID system-id? mk-authorization-handler]]])
-  (:use [ring.middleware.anti-forgery])
   (:use [clojure.string :only [blank? lower-case trim]])
   (:import [backtype.storm.utils Utils]
            [backtype.storm.generated NimbusSummary])
@@ -748,7 +747,6 @@
         "spouts" (spout-comp id spout-comp-summs (.get_errors summ) window include-sys?)
         "bolts" (bolt-comp id bolt-comp-summs (.get_errors summ) window include-sys?)
         "configuration" topology-conf
-        "visualizationTable" (stream-boxes visualizer-data)
         "antiForgeryToken" *anti-forgery-token*
         "replicationCount" replication-count}))))
 
@@ -981,8 +979,6 @@
        (let [user (.getUserName http-creds-handler servlet-request)]
          (assert-authorized-user servlet-request "getTopology" (topology-config id))
          (json-response (component-page id component (:window m) (check-include-sys? (:sys m)) user) (:callback m))))
-  (GET "/api/v1/token" [ & m]
-       (json-response (format "{\"antiForgeryToken\": \"%s\"}" *anti-forgery-token*) (:callback m) :serialize-fn identity))
   (POST "/api/v1/topology/:id/activate" [:as {:keys [cookies servlet-request]} id & m]
     (thrift/with-configured-nimbus-connection nimbus
     (assert-authorized-user servlet-request "activate" (topology-config id))
@@ -1078,16 +1074,11 @@
         (json-response (exception->json ex) ((:query-params request) "callback") :status 500)))))
 
 
-(def csrf-error-response
-  (json-response {"error" "Forbidden action."
-                  "errorMessage" "missing CSRF token."} 403))
-
 (def app
   (handler/site (-> main-routes
                     (wrap-json-params)
                     (wrap-multipart-params)
                     (wrap-reload '[backtype.storm.ui.core])
-                    (wrap-anti-forgery {:error-response csrf-error-response})
                     catch-errors)))
 
 (defn start-server!
