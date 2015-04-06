@@ -109,9 +109,7 @@ You can submit (run) a topology contained in this uberjar to Storm via the `stor
 
     # Example 2: Run the RollingTopWords in remote/cluster mode,
     #            under the name "production-topology"
-    $ storm jar storm-starter-*.jar storm.starter.RollingTopWords production-topology remote
-
-With submitting you can run topologies which use multilang, for example, `WordCountTopology`.
+    $ storm jar storm-starter-*-jar-with-dependencies.jar storm.starter.RollingTopWords production-topology remote
 
 _Submitting a topology in local vs. remote mode:_
 It depends on the actual code of a topology how you can or even must tell Storm whether to run the topology locally (in
