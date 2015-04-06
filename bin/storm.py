@@ -354,8 +354,7 @@ def nimbus(klass="backtype.storm.daemon.nimbus"):
         jvmtype="-server",
         daemonName="nimbus",
         extrajars=cppaths,
-        jvmopts=jvmopts,
-        service_name="nimbus")
+        jvmopts=jvmopts)
 
 def supervisor(klass="backtype.storm.daemon.supervisor"):
     """Syntax: [storm supervisor]
