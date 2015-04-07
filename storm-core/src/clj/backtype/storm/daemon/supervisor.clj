@@ -18,7 +18,6 @@
   (:import [backtype.storm.scheduler ISupervisor]
            [backtype.storm.utils LocalState Time Utils]
            [backtype.storm.daemon Shutdownable]
-           [backtype.storm.daemon.common SupervisorInfo]
            [backtype.storm Constants]
            [java.net JarURLConnection]
            [java.net URI]
@@ -268,7 +267,7 @@
       (if as-user
         (worker-launcher-and-wait conf user ["signal" pid "9"] :log-prefix (str "kill -15 " pid))
         (kill-process-with-sig-term pid)))
-    (when-not (empty? pids)  
+    (when-not (empty? pids)
       (log-message "Sleep " shutdown-sleep-secs " seconds for execution of cleanup threads on worker.")
       (sleep-secs shutdown-sleep-secs))
     (doseq [pid pids]
@@ -511,7 +510,7 @@
         heartbeat-fn (fn [] (.supervisor-heartbeat!
                                (:storm-cluster-state supervisor)
                                (:supervisor-id supervisor)
-                               (SupervisorInfo. (current-time-secs)
+                               (->SupervisorInfo (current-time-secs)
                                                 (:my-hostname supervisor)
                                                 (:assignment-id supervisor)
                                                 (keys @(:curr-assignment supervisor))
