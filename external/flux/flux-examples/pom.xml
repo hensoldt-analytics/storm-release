@@ -20,27 +20,25 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.github.ptgoetz</groupId>
+        <groupId>org.apache.storm</groupId>
         <artifactId>flux</artifactId>
-        <version>0.2.3-SNAPSHOT</version>
+        <version>0.10.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>com.github.ptgoetz</groupId>
     <artifactId>flux-examples</artifactId>
     <packaging>jar</packaging>
 
     <name>flux-examples</name>
-    <url>https://github.com/ptgoetz/flux</url>
 
     <dependencies>
         <dependency>
-            <groupId>com.github.ptgoetz</groupId>
+            <groupId>org.apache.storm</groupId>
             <artifactId>flux-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.github.ptgoetz</groupId>
+            <groupId>org.apache.storm</groupId>
             <artifactId>flux-wrappers</artifactId>
             <version>${project.version}</version>
         </dependency>

@@ -167,6 +167,7 @@
         <module>external/storm-redis</module>
         <module>external/storm-jms</module>
         <module>external/storm-cassandra</module>
+        <module>external/flux</module>
     </modules>
 
     <scm>
