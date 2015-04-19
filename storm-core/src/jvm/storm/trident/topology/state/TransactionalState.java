@@ -41,15 +41,15 @@ import org.json.simple.JSONValue;
 public class TransactionalState {
     CuratorFramework _curator;
     List<ACL> _zkAcls = null;
-    
+
     public static TransactionalState newUserState(Map conf, String id) {
         return new TransactionalState(conf, id, "user");
     }
-    
+
     public static TransactionalState newCoordinatorState(Map conf, String id) {
-        return new TransactionalState(conf, id, "coordinator");        
+        return new TransactionalState(conf, id, "coordinator");
     }
-    
+
     protected TransactionalState(Map conf, String id, String subroot) {
         try {
             conf = new HashMap(conf);
@@ -59,7 +59,7 @@ public class TransactionalState {
             Object port = getWithBackup(conf, Config.TRANSACTIONAL_ZOOKEEPER_PORT, Config.STORM_ZOOKEEPER_PORT);
             ZookeeperAuthInfo auth = new ZookeeperAuthInfo(conf);
             CuratorFramework initter = Utils.newCuratorStarted(conf, servers, port, auth);
-            _zkAcls = Utils.getWorkerACL(conf);
+            //_zkAcls = Utils.getWorkerACL(conf);
             try {
                 TransactionalState.createNode(initter, transactionalRoot, null, null, null);
             } catch (KeeperException.NodeExistsException e) {
@@ -69,17 +69,17 @@ public class TransactionalState {
             } catch (KeeperException.NodeExistsException e) {
             }
             initter.close();
-                                    
+
             _curator = Utils.newCuratorStarted(conf, servers, port, rootDir, auth);
         } catch (Exception e) {
            throw new RuntimeException(e);
         }
     }
 
-    protected static String forPath(PathAndBytesable<String> builder, 
+    protected static String forPath(PathAndBytesable<String> builder,
             String path, byte[] data) throws Exception {
-        return (data == null) 
-            ? builder.forPath(path) 
+        return (data == null)
+            ? builder.forPath(path)
             : builder.forPath(path, data);
     }
 
@@ -87,7 +87,7 @@ public class TransactionalState {
             byte[] data, List<ACL> acls, CreateMode mode) throws Exception {
         ProtectACLCreateModePathAndBytesable<String> builder =
             curator.create().creatingParentsIfNeeded();
-    
+
         if (acls == null) {
             if (mode == null ) {
                 TransactionalState.forPath(builder, path, data);
@@ -117,9 +117,9 @@ public class TransactionalState {
             }
         } catch(Exception e) {
             throw new RuntimeException(e);
-        }        
+        }
     }
-    
+
     public void delete(String path) {
         path = "/" + path;
         try {
@@ -128,7 +128,7 @@ public class TransactionalState {
             throw new RuntimeException(e);
         }
     }
-    
+
     public List<String> list(String path) {
         path = "/" + path;
         try {
@@ -139,13 +139,13 @@ public class TransactionalState {
             }
         } catch(Exception e) {
             throw new RuntimeException(e);
-        }   
+        }
     }
-    
+
     public void mkdir(String path) {
         setData(path, 7);
     }
-    
+
     public Object getData(String path) {
         path = "/" + path;
         try {
@@ -158,11 +158,11 @@ public class TransactionalState {
             throw new RuntimeException(e);
         }
     }
-    
+
     public void close() {
         _curator.close();
     }
-    
+
     private Object getWithBackup(Map amap, Object primary, Object backup) {
         Object ret = amap.get(primary);
         if(ret==null) return amap.get(backup);
