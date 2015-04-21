@@ -21,7 +21,7 @@
         ring.middleware.multipart-params)
   (:use [ring.middleware.json :only [wrap-json-params]])
   (:use [hiccup core page-helpers])
-  (:use [backtype.storm config util log zookeeper])
+  (:use [backtype.storm config util log zookeeper timer])
   (:use [backtype.storm.ui helpers])
   (:use [backtype.storm.daemon [common :only [ACKER-COMPONENT-ID ACKER-INIT-STREAM-ID ACKER-ACK-STREAM-ID
                                               ACKER-FAIL-STREAM-ID system-id? mk-authorization-handler]]])
@@ -37,6 +37,7 @@
   (:import [backtype.storm.generated AuthorizationException])
   (:import [backtype.storm.security.auth AuthUtils])
   (:import [backtype.storm.utils VersionInfo])
+  (:import [backtype.storm.metric GangliaReporter])
   (:import [java.io File])
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
@@ -1090,6 +1091,46 @@
         (json-response (exception->json ex) ((:query-params request) "callback") :status 500)))))
 
 
+(defn start-ganglia-reporter!
+  []
+  (try
+    (let [conf *STORM-CONF*
+          storm-home (System/getProperty "storm.home")
+                                        ; this is needed for compilation to succeed, during compile storm-home may not be set
+                                        ; but as we are initializing ganglia-reporter to keep the ref around
+                                        ; it ends up calling storm-home and .toString will throw NPE failing the compilation
+                                        ; in real runTime storm-home will never be null.
+          storm-home (if storm-home (.toString storm-home) "")
+          storm-metrics-reporter-class (conf "metrics.reporter.register")
+          file-sep (.toString file-path-separator)
+          conf-file-path (str storm-home (when-not (.endsWith storm-home file-sep) file-sep) "conf" file-sep "config.yaml")
+          ganglia-conf (if (exists-file? conf-file-path) (clojure-from-yaml-file (File. conf-file-path)))
+          interval-secs (if (not-nil? ganglia-conf) (get-in ganglia-conf [GangliaReporter/GANGLIA GangliaReporter/GANGLIA_REPORT_INTERVAL_SEC]))
+          enable-ganglia (if (not-nil? ganglia-conf) (ganglia-conf  GangliaReporter/ENABLE_GANGLIA) false)
+          ganglia-reporter (if (and enable-ganglia (not-nil? ganglia-conf))   (GangliaReporter.) nil)
+          enable-metrics (if (not-nil? ganglia-conf) (ganglia-conf "enableMetricsSink") false)
+          metrics-reporter (if (and enable-metrics (not-nil? ganglia-conf) (not-nil? storm-metrics-reporter-class)) (new-instance storm-metrics-reporter-class) nil)
+          ]
+      (if (and enable-ganglia (not-nil? ganglia-reporter))
+        (when interval-secs
+          (.prepare ganglia-reporter ganglia-conf)
+          (log-message "starting ganglia reporter thread at interval: " interval-secs)
+          (schedule-recurring (mk-timer :thread-name "ganglia-reporter")
+                              0 ;; Start immediately.
+                              interval-secs
+                              (fn [] (.reportMetrics ganglia-reporter))))
+        (if (and enable-metrics (not-nil? metrics-reporter))
+          (when interval-secs
+            (.prepare metrics-reporter ganglia-conf)
+            (log-message "starting metrics reporter thread at interval: " interval-secs)
+            (schedule-recurring (mk-timer :thread-name "metrics-reporter")
+                                0 ;; Start immediately.
+                                interval-secs
+                                (fn [] (.reportMetrics metrics-reporter)))))
+        ))
+    (catch Exception ex
+      (log-error ex))))
+
 (def app
   (handler/site (-> main-routes
                     (wrap-json-params)
@@ -1104,6 +1145,7 @@
           header-buffer-size (int (.get conf UI-HEADER-BUFFER-BYTES))
           filters-confs [{:filter-class (conf UI-FILTER)
                           :filter-params (conf UI-FILTER-PARAMS)}]]
+      (start-ganglia-reporter!)
       (storm-run-jetty {:port (conf UI-PORT)
                         :host (conf UI-HOST)
                         :configurator (fn [server]
