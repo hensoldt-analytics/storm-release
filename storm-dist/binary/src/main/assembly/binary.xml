@@ -138,6 +138,7 @@
             </includes>
         </fileSet>
         <fileSet>
+<<<<<<< HEAD
             <directory>${project.basedir}/../../external/storm-jmxetric</directory>
             <outputDirectory>external/storm-jmxetric</outputDirectory>
             <includes>
@@ -154,10 +155,31 @@
         <fileSet>
             <directory>${project.basedir}/../../external/storm-jms</directory>
             <outputDirectory>external/storm-jms</outputDirectory>
+=======
+            <directory>${project.basedir}/../../external/storm-eventhubs/target</directory>
+            <outputDirectory>external/storm-eventhubs</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-eventhubs</directory>
+            <outputDirectory>external/storm-eventhubs</outputDirectory>
+>>>>>>> 3863847... STORM-583: incorporate storm-eventhubs into build (this closes #336)
             <includes>
                 <include>README.*</include>
             </includes>
         </fileSet>
+<<<<<<< HEAD
+=======
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-eventhubs/src/main/resources</directory>
+            <outputDirectory>external/storm-eventhubs</outputDirectory>
+            <includes>
+                <include>Config.properties</include>
+            </includes>
+        </fileSet>
+>>>>>>> 3863847... STORM-583: incorporate storm-eventhubs into build (this closes #336)
 
        <fileSet>
            <directory>${project.basedir}/../../external/storm-cassandra/target</directory>
@@ -231,13 +253,34 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-eventhubs/target</directory>
+            <outputDirectory>external/storm-eventhubs</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-eventhubs</directory>
+            <outputDirectory>external/storm-eventhubs</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-eventhubs/src/main/resources</directory>
+            <outputDirectory>external/storm-eventhubs</outputDirectory>
+            <includes>
+                <include>Config.properties</include>
+            </includes>
+        </fileSet>
 
     </fileSets>
 
     <files>
         <!-- EXAMPLES -->
         <file>
-            <source>${project.basedir}/../../examples/storm-starter/target/storm-starter-${project.version}-jar-with-dependencies.jar</source>
+            <source>${project.basedir}/../../examples/storm-starter/target/storm-starter-${project.version}.jar</source>
             <outputDirectory>/examples/storm-starter/</outputDirectory>
             <destName>storm-starter-topologies-${project.version}.jar</destName>
         </file>
