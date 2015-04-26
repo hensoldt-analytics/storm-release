@@ -1,4 +1,5 @@
 ## 0.11.0
+ * STORM-721: Storm UI server should support SSL.
  * STORM-583: Add Microsoft Azure Event Hub spout implementations
  * STORM-837: HdfsState ignores commits
  * STORM-713: Include topic information with Kafka metrics.
