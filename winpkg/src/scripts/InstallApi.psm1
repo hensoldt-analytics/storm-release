@@ -1,4 +1,4 @@
-﻿### Licensed to the Apache Software Foundation (ASF) under one or more
+### Licensed to the Apache Software Foundation (ASF) under one or more
 ### contributor license agreements.  See the NOTICE file distributed with
 ### this work for additional information regarding copyright ownership.
 ### The ASF licenses this file to You under the Apache License, Version 2.0
@@ -75,8 +75,8 @@ function Install(
         ### $stormInstallPath: the name of the folder containing the application, after unzipping
         $stormInstallPath = Join-Path $nodeInstallRoot $FinalName
         $stormInstallToBin = Join-Path "$stormInstallPath" "bin"
-		
-	    Write-Log "Installing Apache $FinalName to $stormInstallPath"
+
+        Write-Log "Installing Apache $FinalName to $stormInstallPath"
 
         ### Create Node Install Root directory
         if( -not (Test-Path "$stormInstallPath"))
@@ -106,7 +106,7 @@ function Install(
         {
             $shellApplication = new-object -com shell.application
             $zipPackage = $shellApplication.NameSpace("$HDP_RESOURCES_DIR\$FinalName.zip")
-            $destinationFolder = $shellApplication.NameSpace($stormInstallPath)
+            $destinationFolder = $shellApplication.NameSpace($nodeInstallRoot)
             $destinationFolder.CopyHere($zipPackage.Items(), 20)
         }
 		
@@ -116,7 +116,18 @@ function Install(
         Write-Log "Setting the storm_HOME environment variable at machine scope to `"$stormInstallPath`""
         [Environment]::SetEnvironmentVariable("storm_HOME", $stormInstallPath, [EnvironmentVariableTarget]::Machine)
         $ENV:storm_HOME = "$stormInstallPath"
-		
+        
+        ###
+        ### Processing folders
+        ###
+		Write-Log "Renaming external to contrib"
+		Rename-Item -Path "$ENV:storm_HOME\external" -NewName "$ENV:storm_HOME\contrib" -Force 
+		Write-Log "Moving examples/storm-starter to contrib"
+		New-Item -ItemType directory -Path "$ENV:storm_HOME\contrib\storm-starter" -ErrorAction SilentlyContinue
+		Move-Item -Path "$ENV:storm_HOME\examples\storm-starter\*" -Destination "$ENV:storm_HOME\contrib\storm-starter" -Force 
+		Write-Log "Removing examples dir"
+		Remove-Item -Path "$ENV:storm_HOME\examples" -Recurse -Force -ErrorAction SilentlyContinue
+
 		if ($roles) { 
 
 		###
@@ -125,15 +136,19 @@ function Install(
 		Write-Log "Node storm Role Services: $roles"
 
 		### Verify that roles are in the supported set	
-<<<<<<< HEAD
-		CheckRole $roles @("supervisor" "nimbus")
-=======
 		CheckRole $roles @("supervisor", "nimbus", "ui", "logviewer", "drpc")
->>>>>>> 4f5cf1b... STORM-2: Add drpc component to storm's install scripts
 		Write-Log "Role : $roles"
 		foreach( $service in empty-null ($roles -Split('\s+')))
 		{
 			CreateAndConfigureHadoopService $service $HDP_RESOURCES_DIR $stormInstallToBin $serviceCredential
+            $cmd="$ENV:WINDIR\system32\sc.exe config $service start= demand"
+            Invoke-CmdChk $cmd
+			###
+            ### Setup Storm service config
+            ###
+            Write-Log "Creating service config ${stormInstallToBin}\$service.xml"
+            $cmd = "$stormInstallToBin\storm.cmd --service $service > `"$stormInstallToBin\$service.xml`""
+            Invoke-CmdChk $cmd
 		}
 	  
  	     ### end of roles loop
@@ -181,7 +196,7 @@ function Uninstall(
 		
         ### Stop and delete services
         ###
-        foreach( $service in ("supervisor nimbus"))
+        foreach( $service in ("supervisor", "nimbus", "ui", "logviewer"))
         {
             StopAndDeleteHadoopService $service
         }
@@ -228,7 +243,7 @@ function StartService(
     if ( $component -eq "storm" )
     {
         Write-Log "StartService: storm services"
-		CheckRole $roles @("supervisor" "nimbus")
+		CheckRole $roles @("supervisor", "nimbus", "ui", "logviewer")
 
         foreach ( $role in $roles -Split("\s+") )
         {
@@ -265,7 +280,7 @@ function StopService(
     if ( $component -eq "storm" )
     {
         ### Verify that roles are in the supported set
-        CheckRole $roles @("supervisor" "nimbus")
+        CheckRole $roles @("supervisor", "nimbus", "ui", "logviewer")
         foreach ( $role in $roles -Split("\s+") )
         {
             try
@@ -302,7 +317,7 @@ function StopService(
 ###     component: Component to be configured, it should be "storm"
 ###     nodeInstallRoot: Target install folder (for example "C:\Hadoop")
 ###     serviceCredential: Credential object used for service creation
-###     configs: 
+###     configs: Storm configuration that is going to overwrite the default
 ###
 ###############################################################################
 function Configure(
@@ -326,7 +341,19 @@ function Configure(
     
     if ( $component -eq "storm" )
     {
-        Write-Log "Configure: storm does not have any configurations"
+        Write-Log "Configuring storm"
+        Write-Log "Changing storm.yaml"
+        $yaml_file = "$ENV:STORM_HOME\conf\storm.yaml"
+
+        $active_config = GetDefaultConfig
+        # Overwrite default configuration with user supplied configuration
+        foreach($c in $configs.GetEnumerator())
+        {
+            $active_config[$c.Key] = $c.Value
+        }
+        WriteYamlConfigFile $yaml_file $active_config
+
+        Write-Log "Configuration of storm is finished"
     }
     else
     {
@@ -334,8 +361,6 @@ function Configure(
     }
 }
 
-<<<<<<< HEAD
-=======
 ### Return default Storm configuration which will be overwritten
 ### by user provided values
 function GetDefaultConfig()
@@ -382,33 +407,12 @@ function WriteYamlConfigFile(
     Set-Content $fileName $content -Force
 }
 
->>>>>>> 4f5cf1b... STORM-2: Add drpc component to storm's install scripts
 
 ### Helper routing that converts a $null object to nothing. Otherwise, iterating over
 ### a $null object with foreach results in a loop with one $null element.
 function empty-null($obj)
 {
    if ($obj -ne $null) { $obj }
-}
-
-### Gives full permissions on the folder to the given user 
-function GiveFullPermissions(
-    [String]
-    [Parameter( Position=0, Mandatory=$true )]
-    $folder,
-    [String]
-    [Parameter( Position=1, Mandatory=$true )]
-    $username,
-    [bool]
-    [Parameter( Position=2, Mandatory=$false )]
-    $recursive = $false)
-{
-    Write-Log "Giving user/group `"$username`" full permissions to `"$folder`""
-    $cmd = "icacls `"$folder`" /grant ${username}:(OI)(CI)F"
-    if ($recursive) {
-        $cmd += " /T"
-    }
-    Invoke-CmdChk $cmd
 }
 
 ### Checks if the given space separated roles are in the given array of
@@ -476,7 +480,9 @@ function CreateAndConfigureHadoopService(
     }
     else
     {
-        Write-Log "Service `"$service`" already exists, skipping service creation"
+        Write-Log "Service `"$service`" already exists, Removing `"$service`""
+        StopAndDeleteHadoopService $service
+        CreateAndConfigureHadoopService $service $hdpResourcesDir $serviceBinDir $serviceCredential
     }
 }
 
