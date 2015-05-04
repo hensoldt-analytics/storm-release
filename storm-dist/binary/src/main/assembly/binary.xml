@@ -266,6 +266,21 @@
             </includes>
         </fileSet>
 
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-kafka-example/target</directory>
+            <outputDirectory>external/storm-kafka-example</outputDirectory>
+            <includes>
+                <include>storm*-jar-with-dependencies.jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-kafka</directory>
+            <outputDirectory>external/storm-kafka-example</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+
     </fileSets>
 
     <files>
