@@ -281,6 +281,7 @@ public class PartitionManager {
     }
 
     public void close() {
+        commit();
         _connections.unregister(_partition.host, _partition.partition);
     }
 
