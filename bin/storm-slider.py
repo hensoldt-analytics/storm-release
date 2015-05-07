@@ -229,7 +229,8 @@ def get_storm_config_json():
         sys.exit(1)
 
     if 'user' in CMD_OPTS.keys():
-        all_args.append( "--user "+CMD_OPTS['user'])
+        all_args.append("--user")
+        all_args.append(CMD_OPTS['user'])
 
     os.spawnvp(os.P_WAIT,SLIDER_REGISTRY_CMD, all_args)
     if not os.path.exists(CONFFILE):
