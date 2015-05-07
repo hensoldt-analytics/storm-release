@@ -26,10 +26,6 @@
     </parent>
 
     <artifactId>storm-hbase</artifactId>
-    <properties>
-
-        <hbase.version>0.98.4-hadoop2</hbase.version>
-    </properties>
 
     <dependencies>
         <dependency>
@@ -71,7 +67,7 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs</artifactId>
-            <version>${hdfs.version}</version>
+            <version>${hadoop.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -80,7 +76,7 @@
             </exclusions>
         </dependency>
     </dependencies>
-  
+
     <build>
         <plugins>
             <plugin>

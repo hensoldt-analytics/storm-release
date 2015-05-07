@@ -222,6 +222,7 @@
         <clojure-contrib.version>1.2.0</clojure-contrib.version>
         <hive.version>0.14.0</hive.version>
         <hadoop.version>2.6.0</hadoop.version>
+        <hbase.version>1.0.0</hbase.version>
     </properties>
 
     <profiles>
