@@ -130,13 +130,13 @@ def parse_args(string):
     args = [re.compile(r"'((?:[^'\\]|\\.)*)'").sub('\\1', x) for x in args]
     return [re.compile(r'\\(.)').sub('\\1', x) for x in args]
 
-def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[], fork=False):
+def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[], fork=False, service_name="storm-command"):
     global CONFFILE
     storm_log_dir = confvalue("storm.log.dir",[CLUSTER_CONF_DIR])
     if(storm_log_dir == None or storm_log_dir == "nil"):
         storm_log_dir = STORM_DIR+"/logs"
     all_args = [
-        "java", jvmtype, get_config_opts(),
+        "java", jvmtype, get_config_opts(), "-Dstorm.service=" + service_name,
         "-Dstorm.home=" + STORM_DIR,
         "-Dstorm.log.dir=" + storm_log_dir,
         "-Djava.library.path=" + confvalue("java.library.path", extrajars),
@@ -282,7 +282,8 @@ def nimbus(klass="backtype.storm.daemon.nimbus"):
         klass,
         jvmtype="-server",
         extrajars=cppaths,
-        jvmopts=jvmopts)
+        jvmopts=jvmopts,
+        serivce_name="nimbus")
 
 def supervisor(klass="backtype.storm.daemon.supervisor"):
     """Syntax: [storm supervisor]
@@ -302,7 +303,8 @@ def supervisor(klass="backtype.storm.daemon.supervisor"):
         klass,
         jvmtype="-server",
         extrajars=cppaths,
-        jvmopts=jvmopts)
+        jvmopts=jvmopts,
+        service_name="supervisor")
 
 def ui():
     """Syntax: [storm ui]
@@ -323,6 +325,7 @@ def ui():
         "backtype.storm.ui.core",
         jvmtype="-server",
         jvmopts=jvmopts,
+        service_name="ui",
         extrajars=[STORM_DIR, CLUSTER_CONF_DIR])
 
 def logviewer():
@@ -344,6 +347,7 @@ def logviewer():
         "backtype.storm.daemon.logviewer",
         jvmtype="-server",
         jvmopts=jvmopts,
+        service_name="logviewer",
         extrajars=[STORM_DIR, CLUSTER_CONF_DIR])
 
 def drpc():
@@ -364,6 +368,7 @@ def drpc():
         "backtype.storm.daemon.drpc",
         jvmtype="-server",
         jvmopts=jvmopts,
+        service_name="drpc",
         extrajars=[CLUSTER_CONF_DIR])
 
 def dev_zookeeper():
@@ -377,6 +382,7 @@ def dev_zookeeper():
     exec_storm_class(
         "backtype.storm.command.dev_zookeeper",
         jvmtype="-server",
+        service_name="dev_zookeeper",
         extrajars=[CLUSTER_CONF_DIR])
 
 def version():
