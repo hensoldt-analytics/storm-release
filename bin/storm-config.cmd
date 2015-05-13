@@ -88,7 +88,7 @@ if not defined STORM_LOG_DIR (
 @rem
 
 "%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" backtype.storm.command.config_value storm.logback.conf.dir > %CMD_TEMP_FILE%
-  
+
 FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
 	FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
 		if %%a == VALUE: (
@@ -96,7 +96,7 @@ FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
 			del /F %CMD_TEMP_FILE%)
 		)
 	)
-)		
+)
 
 @rem
 @rem if STORM_LOGBACK_CONFIGURATION_DIR was defined, also set STORM_LOGBACK_CONFIGURATION_FILE
@@ -104,7 +104,7 @@ FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
 
 if not %STORM_LOGBACK_CONFIGURATION_DIR% == nil (
 	set STORM_LOGBACK_CONFIGURATION_FILE=%STORM_LOGBACK_CONFIGURATION_DIR%\cluster.xml
-) 
+)
 
 @rem
 @rem otherwise, fall back to default
@@ -115,7 +115,7 @@ if not defined STORM_LOGBACK_CONFIGURATION_FILE (
 )
 %JAVA% -client -Dstorm.options= -Dstorm.conf.file= -cp %CLASSPATH% backtype.storm.command.config_value java.library.path > %CMD_TEMP_FILE%
 
-FOR /F "delims=" %%i in (temp.txt) do (
+FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
     FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
 	 if %%a == VALUE: (
 	   set JAVA_LIBRARY_PATH=%%b
