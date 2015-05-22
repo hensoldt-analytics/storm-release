@@ -1325,7 +1325,7 @@ public class Config extends HashMap<String, Object> {
      * if required nimbus.min.replication.count is not achieved. The default is 0 seconds, a value of
      * -1 indicates to wait for ever.
      */
-    public static final String TOPOLOGY_MAX_REPLICATION_WAIT_TIME_SEC = "nimbus.max.replication.wait.time.sec";
+    public static final String TOPOLOGY_MAX_REPLICATION_WAIT_TIME_SEC = "topology.max.replication.wait.time.sec";
     public static final Object TOPOLOGY_MAX_REPLICATION_WAIT_TIME_SEC_SCHEMA = Number.class;
 
     /**
