@@ -67,8 +67,8 @@ public abstract class AbstractUserTopology {
 
     public void execute(String[] args) throws Exception {
         if (args.length != 4 && args.length != 5) {
-            System.out.println("Usage: " + this.getClass().getSimpleName() + " <dataSourceClassName> <dataSource.url> "
-                    + "<user> <password> [topology name]");
+            System.out.println("Usage: " + this.getClass().getSimpleName() + " [dataSourceClassName] [dataSource.url] "
+                    + "[user] <password (optional)> [topology-name/local]");
             System.exit(-1);
         }
         Map map = Maps.newHashMap();
@@ -76,7 +76,7 @@ public abstract class AbstractUserTopology {
         map.put("dataSource.url", args[1]);//jdbc:mysql://localhost/test
         map.put("dataSource.user", args[2]);//root
 
-        if(args.length == 4) {
+        if(args.length == 5) {
             map.put("dataSource.password", args[3]);//password
         }
 
@@ -98,7 +98,7 @@ public abstract class AbstractUserTopology {
         List<Column> queryParamColumns = Lists.newArrayList(new Column("user_id", Types.INTEGER));
         this.jdbcLookupMapper = new SimpleJdbcLookupMapper(outputFields, queryParamColumns);
         this.connectionPrvoider = new HikariCPConnectionProvider(map);
-        if (args.length == 4) {
+        if (args[args.length - 1].equalsIgnoreCase("local")) {
             LocalCluster cluster = new LocalCluster();
             cluster.submitTopology("test", config, getTopology());
             Thread.sleep(30000);
@@ -106,7 +106,7 @@ public abstract class AbstractUserTopology {
             cluster.shutdown();
             System.exit(0);
         } else {
-            StormSubmitter.submitTopology(args[4], config, getTopology());
+            StormSubmitter.submitTopology(args[args.length - 1], config, getTopology());
         }
     }
 
