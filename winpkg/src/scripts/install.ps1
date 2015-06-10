@@ -98,7 +98,7 @@ function Main( $scriptDir )
     $ENV:STORM_NIMBUS_LOCAL_DIR = $ENV:HDP_DATA_DIR.Replace('\\', '\')
     $ENV:STORM_NIMBUS_LOCAL_DIR = $ENV:STORM_NIMBUS_LOCAL_DIR.Replace('\', '\\')
     $config += @{"storm.zookeeper.servers"=$ENV:ZOOKEEPER_HOSTS;
-        "nimbus.host"='"' + $ENV:STORM_NIMBUS + '"';
+        "nimbus.seeds"='"' + $ENV:STORM_NIMBUS + '"';
         "storm.local.dir"='"' + $ENV:STORM_NIMBUS_LOCAL_DIR+ '"'
     }
 
