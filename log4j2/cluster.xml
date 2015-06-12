@@ -30,8 +30,8 @@
         </PatternLayout>
         <Policies>
             <SizeBasedTriggeringPolicy size="100 MB"/> <!-- Or every 100 MB -->
+            <DefaultRolloverStrategy max="9"/>
         </Policies>
-        <DefaultRolloverStrategy max="9"/>
     </RollingFile>
     <RollingFile name="ACCESS"
                  fileName="${sys:storm.log.dir}/access.log"
@@ -41,6 +41,7 @@
         </PatternLayout>
         <Policies>
             <SizeBasedTriggeringPolicy size="100 MB"/> <!-- Or every 100 MB -->
+            <DefaultRolloverStrategy max="9"/>
         </Policies>
         <DefaultRolloverStrategy max="9"/>
     </RollingFile>
@@ -53,7 +54,6 @@
         <Policies>
             <SizeBasedTriggeringPolicy size="2 MB"/> <!-- Or every 100 MB -->
         </Policies>
-        <DefaultRolloverStrategy max="9"/>
     </RollingFile>
     <Syslog name="syslog" format="RFC5424" host="localhost" port="514"
             protocol="UDP" appName="[${sys:daemon.name}]" mdcId="mdc" includeMDC="true"
