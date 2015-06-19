@@ -138,38 +138,6 @@ Sample response:
 }
 ```
 
-### /api/v1/nimbus/summary (GET)
-
-Returns summary information for all nimbus hosts.
-
-Response fields:
-
-|Field  |Value|Description|
-|---	|---	|---
-|host| String | Nimbus' host name|
-|port| int| Nimbus' port number|
-|status| String| Possible values are Leader, Not a Leader, Dead|
-|nimbusUpTime| String| Shows since how long the nimbus has been running|
-|nimbusLogLink| String| Logviewer url to view the nimbus.log|
-|version| String| Version of storm this nimbus host is running|
-
-Sample response:
-
-```json
-{
-    "nimbuses":[
-        {
-            "host":"192.168.202.1",
-            "port":6627,
-            "nimbusLogLink":"http:\/\/192.168.202.1:8000\/log?file=nimbus.log",
-            "status":Leader,
-            "version":"0.10.0-SNAPSHOT",
-            "nimbusUpTime":"3m 33s"
-        }
-    ]
-}
-```
-
 ### /api/v1/topology/summary (GET)
 
 Returns summary information for all topologies.
