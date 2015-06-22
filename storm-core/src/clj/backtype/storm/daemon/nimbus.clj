@@ -125,10 +125,10 @@
 (defn- read-storm-conf [conf storm-id]
   (let [stormroot (master-stormdist-root conf storm-id)]
     (merge conf
-           (Utils/javaDeserialize
-            (FileUtils/readFileToByteArray
-             (File. (master-stormconf-path stormroot))
-             ) java.util.Map))))
+       (clojurify-structure
+         (Utils/fromCompressedJsonConf
+           (FileUtils/readFileToByteArray
+             (File. (master-stormconf-path stormroot))))))))
 
 (declare delay-event)
 (declare mk-assignments)
@@ -187,7 +187,9 @@
               }
    :killed {:startup (fn [] (delay-event nimbus
                                          storm-id
-                                         (:delay-secs storm-base)
+                                         (-> storm-base
+                                             :topology-action-options
+                                             :delay-secs)
                                          :remove)
                              nil)
             :kill (kill-transition nimbus storm-id)
@@ -199,7 +201,9 @@
             }
    :rebalancing {:startup (fn [] (delay-event nimbus
                                               storm-id
-                                              (:delay-secs storm-base)
+                                              (-> storm-base
+                                                  :topology-action-options
+                                                  :delay-secs)
                                               :do-rebalance)
                                  nil)
                  :kill (kill-transition nimbus storm-id)
@@ -341,7 +345,7 @@
    (FileUtils/cleanDirectory (File. stormroot))
    (setup-jar conf tmp-jar-location stormroot)
    (FileUtils/writeByteArrayToFile (File. (master-stormcode-path stormroot)) (Utils/serialize topology))
-   (FileUtils/writeByteArrayToFile (File. (master-stormconf-path stormroot)) (Utils/javaSerialize storm-conf))
+   (FileUtils/writeByteArrayToFile (File. (master-stormconf-path stormroot)) (Utils/toCompressedJsonConf storm-conf))
    (if (:code-distributor nimbus) (.upload (:code-distributor nimbus) stormroot storm-id))
    ))
 
