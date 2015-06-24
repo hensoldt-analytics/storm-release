@@ -420,6 +420,7 @@
                             <include>org.apache.httpcomponents:http*</include>
                             <include>org.apache.zookeeper:zookeeper</include>
                             <include>org.apache.curator:*</include>
+                            <include>org.eclipse.jetty:*</include>
                         </includes>
                     </artifactSet>
 
@@ -451,6 +452,10 @@
                         <relocation>
                             <pattern>org.apache.curator</pattern>
                             <shadedPattern>org.apache.storm.curator</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.eclipse.jetty</pattern>
+                            <shadedPattern>org.apache.storm.jetty</shadedPattern>
                         </relocation>
                     </relocations>
                     <transformers>
