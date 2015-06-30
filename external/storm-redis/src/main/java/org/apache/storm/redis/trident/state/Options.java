@@ -1,4 +1,4 @@
-/*******************************************************************************
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -14,23 +14,21 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
+ */
+package org.apache.storm.redis.trident.state;
 
-import java.util.Map;
+import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
+import storm.trident.state.Serializer;
 
-import com.microsoft.eventhubs.client.EventHubException;
-import com.microsoft.eventhubs.client.IEventHubFilter;
+import java.io.Serializable;
 
-public interface IEventHubReceiver {
+public class Options<T> implements Serializable {
+	private static final RedisDataTypeDescription DEFAULT_REDIS_DATATYPE = new RedisDataTypeDescription(RedisDataTypeDescription.RedisDataType.STRING);
 
-  void open(IEventHubFilter filter) throws EventHubException;
-
-  void close();
-  
-  boolean isOpen();
-
-  EventData receive(long timeoutInMilliseconds);
-  
-  Map getMetricsData();
+	public int localCacheSize = 1000;
+	public String globalKey = "$REDIS-MAP-STATE-GLOBAL";
+	public KeyFactory keyFactory = null;
+	public Serializer<T> serializer = null;
+	public RedisDataTypeDescription dataTypeDescription = DEFAULT_REDIS_DATATYPE;
+	public int expireIntervalSec = 0;
 }

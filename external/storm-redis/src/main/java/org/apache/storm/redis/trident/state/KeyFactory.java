@@ -1,4 +1,4 @@
-/*******************************************************************************
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -14,22 +14,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
-
-/**
- * The filter to create an EventHubs receiver
  */
-public interface IEventHubReceiverFilter {
-  /**
-   * Get offset to filter events based on offset 
-   * @return null if offset not set
-   */
-  String getOffset();
-  
-  /**
-   * Get timestamp to filter events based on enqueue time.
-   * @return 0 if enqueue time is not set
-   */
-  long getEnqueueTime();
+package org.apache.storm.redis.trident.state;
+
+import java.io.Serializable;
+import java.util.List;
+
+public interface KeyFactory extends Serializable {
+	String build(List<Object> key);
+
+	class DefaultKeyFactory implements KeyFactory {
+		public String build(List<Object> key) {
+			if (key.size() != 1)
+				throw new RuntimeException("Default KeyFactory does not support compound keys");
+
+			return (String) key.get(0);
+		}
+	}
 }
+

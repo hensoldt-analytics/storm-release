@@ -1,4 +1,4 @@
-/*******************************************************************************
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -14,23 +14,26 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
+ */
+package org.apache.storm.redis.trident;
 
-import java.util.Map;
+import backtype.storm.tuple.ITuple;
+import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
+import org.apache.storm.redis.common.mapper.RedisStoreMapper;
 
-import com.microsoft.eventhubs.client.EventHubException;
-import com.microsoft.eventhubs.client.IEventHubFilter;
+public class WordCountStoreMapper implements RedisStoreMapper {
+    @Override
+    public RedisDataTypeDescription getDataTypeDescription() {
+        return new RedisDataTypeDescription(RedisDataTypeDescription.RedisDataType.HASH, "test");
+    }
 
-public interface IEventHubReceiver {
+    @Override
+    public String getKeyFromTuple(ITuple tuple) {
+        return "test_" + tuple.getString(0);
+    }
 
-  void open(IEventHubFilter filter) throws EventHubException;
-
-  void close();
-  
-  boolean isOpen();
-
-  EventData receive(long timeoutInMilliseconds);
-  
-  Map getMetricsData();
+    @Override
+    public String getValueFromTuple(ITuple tuple) {
+        return tuple.getInteger(1).toString();
+    }
 }
