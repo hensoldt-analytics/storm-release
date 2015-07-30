@@ -187,7 +187,7 @@ public class HiveBolt extends  BaseRichBolt {
         }
     }
 
-    private void flushAllWriters(boolean rollToNext)
+    void flushAllWriters(boolean rollToNext)
         throws HiveWriter.CommitFailure, HiveWriter.TxnBatchFailure, HiveWriter.TxnFailure, InterruptedException {
         for(HiveWriter writer: allWriters.values()) {
             writer.flush(rollToNext);
