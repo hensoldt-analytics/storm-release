@@ -18,10 +18,7 @@
 package backtype.storm.utils;
 
 import backtype.storm.Config;
-import backtype.storm.generated.AuthorizationException;
-import backtype.storm.generated.ComponentCommon;
-import backtype.storm.generated.ComponentObject;
-import backtype.storm.generated.StormTopology;
+import backtype.storm.generated.*;
 import backtype.storm.serialization.DefaultSerializationDelegate;
 import backtype.storm.serialization.SerializationDelegate;
 import clojure.lang.IFn;
@@ -57,6 +54,7 @@ public class Utils {
     public static final String DEFAULT_STREAM_ID = "default";
 
     private static SerializationDelegate serializationDelegate;
+    private static Random randomGenerator = new Random();
 
     static {
         Map conf = readStormConfig();
@@ -357,23 +355,31 @@ public class Utils {
         return ret;
     }
 
-    public static void downloadFromMaster(Map conf, String file, String localFile) throws AuthorizationException, IOException, TException {
+    public static void downloadFromMaster(Map conf, String file, String localFile) throws AuthorizationException, IOException, TException, InterruptedException {
         NimbusClient client = NimbusClient.getConfiguredClient(conf);
         download(client, file, localFile);
     }
 
-    public static void downloadFromHost(Map conf, String file, String localFile, String host, int port) throws IOException, TException, AuthorizationException {
+    public static void downloadFromHost(Map conf, String file, String localFile, String host, int port) throws IOException, TException, AuthorizationException, InterruptedException {
         NimbusClient client = new NimbusClient (conf, host, port, null);
         download(client, file, localFile);
     }
 
-    private static void download(NimbusClient client, String file, String localFile) throws IOException, TException, AuthorizationException {
+    private static void download(NimbusClient client, String file, String localFile) throws IOException, TException, AuthorizationException, InterruptedException {
         String id = client.getClient().beginFileDownload(file);
         WritableByteChannel out = Channels.newChannel(new FileOutputStream(localFile));
+
         while(true) {
-            ByteBuffer chunk = client.getClient().downloadChunk(id);
-            int written = out.write(chunk);
-            if(written==0) break;
+            int sleepMillis = 50 + randomGenerator.nextInt(100);
+            try {
+                ByteBuffer chunk = client.getClient().downloadChunk(id);
+                int written = out.write(chunk);
+                Thread.sleep(sleepMillis);
+                if (written == 0) break;
+            } catch (ThrottlingException e) {
+                LOG.warn("Nimbus is busy will sleep for  " + sleepMillis + " and retry.", e);
+                Thread.sleep(sleepMillis);
+            }
         }
         out.close();
     }

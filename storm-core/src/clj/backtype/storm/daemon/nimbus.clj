@@ -14,7 +14,9 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns backtype.storm.daemon.nimbus
-  (:import [org.apache.thrift.server THsHaServer THsHaServer$Args])
+  (:import [org.apache.thrift.server THsHaServer THsHaServer$Args]
+           [java.util.concurrent RejectedExecutionException]
+           [backtype.storm.generated ThrottlingException])
   (:import [org.apache.thrift.protocol TBinaryProtocol TBinaryProtocol$Factory])
   (:import [org.apache.thrift.exception])
   (:import [org.apache.thrift.transport TNonblockingServerTransport TNonblockingServerSocket])
@@ -1283,7 +1285,7 @@
       (^String beginFileDownload [this ^String file]
         (check-authorization! nimbus nil nil "fileDownload")
         (check-file-access (:conf nimbus) file)
-        (let [is (BufferFileInputStream. file)
+        (let [is (BufferFileInputStream. file ((:conf nimbus) NIMBUS-THRIFT-MAX-BUFFER-SIZE))
               id (uuid)]
           (.put (:downloaders nimbus) id is)
           id
@@ -1291,6 +1293,7 @@
 
       (^ByteBuffer downloadChunk [this ^String id]
         (check-authorization! nimbus nil nil "fileDownload")
+        (sleep-secs 1)
         (let [downloaders (:downloaders nimbus)
               ^BufferFileInputStream is (.get downloaders id)]
           (when-not is
