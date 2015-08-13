@@ -192,8 +192,9 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
                             return wrapped.getTransport(trans);
                         }
                         catch (Exception e) {
-                            LOG.debug("Storm server failed to open transport to interact with a client during session initiation: " + e, e);
-                            return null;
+                            LOG.debug("Storm server failed to open transport " +
+                                    "to interact with a client during session initiation: " + e, e);
+                            return new NoOpTTrasport(null);
                         }
                     }
                 });
