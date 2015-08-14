@@ -1,5 +1,6 @@
 ## 0.11.0
  * STORM-583: Add Microsoft Azure Event Hub spout implementations
+ * STORM-837: HdfsState ignores commits
  * STORM-713: Include topic information with Kafka metrics.
  * STORM-708: CORS support for STORM UI.
  * STORM-615: Add REST API to upload topology.
