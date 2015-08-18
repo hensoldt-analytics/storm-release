@@ -27,6 +27,19 @@
 
     <artifactId>storm-hbase</artifactId>
 
+    <developers>
+        <developer>
+            <id>ptgoetz</id>
+            <name>P. Taylor Goetz</name>
+            <email>ptgoetz@gmail.com</email>
+        </developer>
+    </developers>
+
+    <properties>
+        <hbase.version>0.98.4-hadoop2</hbase.version>
+        <hdfs.version>${hadoop.version}</hdfs.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
