@@ -223,7 +223,7 @@
         <hive.version>0.14.0</hive.version>
         <hadoop.version>2.6.0</hadoop.version>
         <hbase.version>1.0.0</hbase.version>
-        <kafka.version>0.8.2.2.3.0.0-2384</kafka.version>
+        <kafka.version>0.8.2.2.3.0.0-2557</kafka.version>
         <kryo.version>2.21</kryo.version>
     </properties>
 
