@@ -361,34 +361,37 @@ public class Utils {
     public static void downloadFromMaster(Map conf, String file, String localFile) throws AuthorizationException, IOException, TException, InterruptedException {
         NimbusClient client = NimbusClient.getConfiguredClient(conf);
         try {
-        download(client, file, localFile);
+        	download(client, file, localFile);
         } finally {
-            client.close();
+        	client.close();
         }
     }
 
     public static void downloadFromHost(Map conf, String file, String localFile, String host, int port) throws IOException, TException, AuthorizationException, InterruptedException {
         NimbusClient client = new NimbusClient (conf, host, port, null);
-        download(client, file, localFile);
+        try {
+        	download(client, file, localFile);
+        } finally {
+        	client.close();
+        }
     }
 
     private static void download(NimbusClient client, String file, String localFile) throws IOException, TException, AuthorizationException, InterruptedException {
         String id = client.getClient().beginFileDownload(file);
-        WritableByteChannel out = Channels.newChannel(new FileOutputStream(localFile));
-
-        while(true) {
-            int sleepMillis = 50 + randomGenerator.nextInt(100);
-            try {
-                ByteBuffer chunk = client.getClient().downloadChunk(id);
-                int written = out.write(chunk);
-                Thread.sleep(sleepMillis);
-                if (written == 0) break;
-            } catch (ThrottlingException e) {
-                LOG.warn("Nimbus is busy will sleep for  " + sleepMillis + " and retry.", e);
-                Thread.sleep(sleepMillis);
+        try (WritableByteChannel out = Channels.newChannel(new FileOutputStream(localFile))) {
+            while (true) {
+                int sleepMillis = 50 + randomGenerator.nextInt(100);
+                try {
+                    ByteBuffer chunk = client.getClient().downloadChunk(id);
+                    int written = out.write(chunk);
+                    Thread.sleep(sleepMillis);
+                    if (written == 0) break;
+                } catch (ThrottlingException e) {
+                    LOG.warn("Nimbus is busy will sleep for  " + sleepMillis + " and retry.", e);
+                    Thread.sleep(sleepMillis);
+                }
             }
         }
-        out.close();
     }
 
     public static IFn loadClojureFn(String namespace, String name) {
