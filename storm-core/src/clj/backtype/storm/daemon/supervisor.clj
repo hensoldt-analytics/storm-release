@@ -263,7 +263,7 @@
       (psim/kill-process thread-pid))
     (doseq [pid pids]
       (if as-user
-        (worker-launcher-and-wait conf user ["signal" pid "9"] :log-prefix (str "kill -15 " pid))
+        (worker-launcher-and-wait conf user ["signal" pid "15"] :log-prefix (str "kill -15 " pid))
         (kill-process-with-sig-term pid)))
     (when-not (empty? pids)
       (log-message "Sleep " shutdown-sleep-secs " seconds for execution of cleanup threads on worker.")
@@ -485,7 +485,7 @@
       ;; resources don't exist
       (if on-windows? (shutdown-disallowed-workers supervisor))
       (doseq [storm-id downloaded-storm-ids]
-        (when-not (storm-code-map storm-id)
+        (when-not (assigned-storm-ids storm-id)
           (log-message "Removing code for storm id "
                        storm-id)
           (try
