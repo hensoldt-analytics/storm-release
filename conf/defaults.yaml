@@ -58,7 +58,7 @@ nimbus.thrift.max_buffer_size: 1048576
 nimbus.childopts: "-Xmx1024m"
 nimbus.task.timeout.secs: 30
 nimbus.supervisor.timeout.secs: 60
-nimbus.monitor.freq.secs: 10
+nimbus.monitor.freq.secs: 120
 nimbus.cleanup.inbox.freq.secs: 600
 nimbus.inbox.jar.expiration.secs: 3600
 nimbus.code.sync.freq.secs: 300
