@@ -21,7 +21,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>0.9.3-incubating-SNAPSHOT</version>
+        <version>0.9.3.2.2.8.0-3150</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -29,7 +29,7 @@
     <artifactId>storm-hbase</artifactId>
     <properties>
 
-        <hbase.version>0.98.4-hadoop2</hbase.version>
+        <hbase.version>0.98.4.2.2.8.0-3150-hadoop2</hbase.version>
     </properties>
 
     <dependencies>
