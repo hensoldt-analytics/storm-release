@@ -372,21 +372,28 @@
     (wait-for-workers-launch
      conf
      (dofor [[port assignment] reassign-executors]
-       (let [id (new-worker-ids port)]
-         (log-message "Launching worker with assignment "
-                      (pr-str assignment)
-                      " for this supervisor "
-                      (:supervisor-id supervisor)
-                      " on port "
-                      port
-                      " with id "
-                      id
-                      )
-         (launch-worker supervisor
-                        (:storm-id assignment)
-                        port
-                        id)
-         id)))
+            (let [id (new-worker-ids port)]
+              (try
+                (log-message "Launching worker with assignment "
+                             (pr-str assignment)
+                             " for this supervisor "
+                             (:supervisor-id supervisor)
+                             " on port "
+                             port
+                             " with id "
+                             id
+                             )
+                (launch-worker supervisor
+                               (:storm-id assignment)
+                               port
+                               id)
+                (catch java.io.FileNotFoundException e
+                  (log-message "Unable to launch worker due to "
+                               (.getMessage e)))
+                (catch java.io.IOException e
+                  (log-message "Unable to launch worker due to "
+                               (.getMessage e))))
+              id)))
     ))
 
 (defn assigned-storm-ids-from-port-assignments [assignment]
