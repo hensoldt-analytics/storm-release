@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Map.Entry;
@@ -57,7 +57,7 @@ public class HiveBolt extends  BaseRichBolt {
     private Boolean kerberosEnabled = false;
     private Boolean sendHeartBeat = true;
     private UserGroupInformation ugi = null;
-    HashMap<HiveEndPoint, HiveWriter> allWriters;
+    private Map<HiveEndPoint, HiveWriter> allWriters;
     private List<Tuple> tupleBatch;
 
     public HiveBolt(HiveOptions options) {
@@ -86,7 +86,7 @@ public class HiveBolt extends  BaseRichBolt {
                 }
             }
             this.collector = collector;
-            allWriters = new HashMap<HiveEndPoint,HiveWriter>();
+            allWriters = new ConcurrentHashMap<HiveEndPoint,HiveWriter>();
             String timeoutName = "hive-bolt-%d";
             this.callTimeoutPool = Executors.newFixedThreadPool(1,
                                 new ThreadFactoryBuilder().setNameFormat(timeoutName).build());

@@ -281,21 +281,23 @@ public class HiveWriter {
 
     private void abortTxn() throws InterruptedException {
         LOG.info("Aborting Txn id {} on End Point {}", txnBatch.getCurrentTxnId(), endPoint);
-        try {
-            callWithTimeout(new CallRunner<Void>() {
-                    @Override
+        synchronized(txnBatchLock) {
+            try {
+                callWithTimeout(new CallRunner<Void>() {
+                        @Override
                         public Void call() throws StreamingException, InterruptedException {
-                        txnBatch.abort(); // could block
-                        return null;
-                    }
-                });
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (TimeoutException e) {
-            LOG.warn("Timeout while aborting Txn " + txnBatch.getCurrentTxnId() + " on EndPoint: " + endPoint, e);
-        } catch (Exception e) {
-            LOG.warn("Error aborting Txn " + txnBatch.getCurrentTxnId() + " on EndPoint: " + endPoint, e);
-            // Suppressing exceptions as we don't care for errors on abort
+                            txnBatch.abort(); // could block
+                            return null;
+                        }
+                    });
+            } catch (InterruptedException e) {
+                throw e;
+            } catch (TimeoutException e) {
+                LOG.warn("Timeout while aborting Txn " + txnBatch.getCurrentTxnId() + " on EndPoint: " + endPoint, e);
+            } catch (Exception e) {
+                LOG.warn("Error aborting Txn " + txnBatch.getCurrentTxnId() + " on EndPoint: " + endPoint, e);
+                // Suppressing exceptions as we don't care for errors on abort
+            }
         }
     }
 

@@ -38,7 +38,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Map.Entry;
@@ -58,7 +58,7 @@ public class HiveState implements State {
     private Boolean sendHeartBeat = true;
     private UserGroupInformation ugi = null;
     private Boolean kerberosEnabled = false;
-    HashMap<HiveEndPoint, HiveWriter> allWriters;
+    private Map<HiveEndPoint, HiveWriter> allWriters;
 
     public HiveState(HiveOptions options) {
         this.options = options;
@@ -94,7 +94,7 @@ public class HiveState implements State {
                 }
             }
 
-            allWriters = new HashMap<HiveEndPoint,HiveWriter>();
+            allWriters = new ConcurrentHashMap<HiveEndPoint,HiveWriter>();
             String timeoutName = "hive-bolt-%d";
             this.callTimeoutPool = Executors.newFixedThreadPool(1,
                                                                 new ThreadFactoryBuilder().setNameFormat(timeoutName).build());
