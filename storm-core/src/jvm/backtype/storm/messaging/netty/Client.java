@@ -83,12 +83,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
      */
     private final AtomicReference<Channel> channelRef = new AtomicReference<Channel>(null);
 
-
-    /**
-     * Maximum number of reconnection attempts we will perform after a disconnect before giving up.
-     */
-    private final int maxReconnectionAttempts;
-
     /**
      * Total number of connection attempts.
      */
@@ -160,7 +154,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
         messageBatchSize = Utils.getInt(stormConf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
         flushCheckIntervalMs = Utils.getInt(stormConf.get(Config.STORM_NETTY_FLUSH_CHECK_INTERVAL_MS), 10);
 
-        maxReconnectionAttempts = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_MAX_RETRIES));
+        int maxReconnectionAttempts = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_MAX_RETRIES));
         int minWaitMs = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_MIN_SLEEP_MS));
         int maxWaitMs = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
         retryPolicy = new StormBoundedExponentialBackoffRetry(minWaitMs, maxWaitMs, maxReconnectionAttempts);
@@ -306,7 +300,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject {
     }
 
     private boolean reconnectingAllowed() {
-        return !closing && connectionAttempts.get() <= (maxReconnectionAttempts + 1);
+        return !closing;
     }
 
     private boolean connectionEstablished(Channel channel) {
