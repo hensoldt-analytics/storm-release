@@ -29,7 +29,6 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
 import javax.security.sasl.SaslServer;
 
-import backtype.storm.utils.ExtendedThreadPoolExecutor;
 import backtype.storm.security.auth.kerberos.NoOpTTrasport;
 import org.apache.thrift.TException;
 import org.apache.thrift.TProcessor;
@@ -83,7 +82,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
         }
 
         //if (queueSize != null) {
-        //    server_args.executorService(new ThreadPoolExecutor(numWorkerThreads, numWorkerThreads, 
+        //    server_args.executorService(new ThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
         //                           60, TimeUnit.SECONDS, new ArrayBlockingQueue(queueSize)));
         //}
 
@@ -98,12 +97,12 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
     protected abstract TTransportFactory getServerTransportFactory() throws IOException;
 
 
-    /**                                                                                                                                                                             
-     * Processor that pulls the SaslServer object out of the transport, and                                                                                                         
-     * assumes the remote user's UGI before calling through to the original                                                                                                         
-     * processor.                                                                                                                                                                   
-     *                                                                                                                                                                              
-     * This is used on the server side to set the UGI for each specific call.                                                                                                       
+    /**
+     * Processor that pulls the SaslServer object out of the transport, and
+     * assumes the remote user's UGI before calling through to the original
+     * processor.
+     *
+     * This is used on the server side to set the UGI for each specific call.
      */
     private class TUGIWrapProcessor implements TProcessor {
         final TProcessor wrapped;
@@ -113,7 +112,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
         }
 
         public boolean process(final TProtocol inProt, final TProtocol outProt) throws TException {
-            //populating request context 
+            //populating request context
             ReqContext req_context = ReqContext.context();
 
             TTransport trans = inProt.getTransport();
@@ -129,13 +128,13 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
             Socket socket = tsocket.getSocket();
             req_context.setRemoteAddress(socket.getInetAddress());
 
-            //remote subject 
+            //remote subject
             SaslServer saslServer = saslTrans.getSaslServer();
             String authId = saslServer.getAuthorizationID();
             Subject remoteUser = new Subject();
             remoteUser.getPrincipals().add(new User(authId));
             req_context.setSubject(remoteUser);
-            
+
             //invoke service handler
             return wrapped.process(inProt, outProt);
         }
@@ -148,8 +147,8 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
             this.name =  name;
         }
 
-        /**                                                                                                                                                                                
-         * Get the full name of the user.                                                                                                                                                  
+        /**
+         * Get the full name of the user.
          */
         public String getName() {
             return name;
