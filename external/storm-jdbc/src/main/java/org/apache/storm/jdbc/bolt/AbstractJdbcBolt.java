@@ -52,8 +52,10 @@ public abstract class AbstractJdbcBolt extends BaseRichBolt {
         this.jdbcClient = new JdbcClient(connectionPrvoider, queryTimeoutSecs);
     }
 
-    public AbstractJdbcBolt(ConnectionPrvoider connectionPrvoider) {
-        this.connectionPrvoider = connectionPrvoider;
+
+    public AbstractJdbcBolt(ConnectionPrvoider connectionProvider) {
+        Validate.notNull(connectionProvider);
+        this.connectionPrvoider = connectionProvider;
     }
 
     @Override
