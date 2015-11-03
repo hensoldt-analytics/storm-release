@@ -240,7 +240,7 @@ public class TransactionalWords {
 
     cluster.submitTopology("top-n-topology", config, builder.buildTopology());
 
-    Thread.sleep(3000);
+    Thread.sleep(30000);
     cluster.shutdown();
   }
 }
