@@ -71,8 +71,6 @@ public class PersistentWordCount {
             LocalCluster cluster = new LocalCluster();
             cluster.submitTopology("test", config, builder.createTopology());
             Thread.sleep(30000);
-            cluster.killTopology("test");
-            cluster.shutdown();
             System.exit(0);
         } else if (args.length == 2) {
             StormSubmitter.submitTopology(args[1], config, builder.createTopology());
