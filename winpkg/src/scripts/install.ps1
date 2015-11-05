@@ -118,7 +118,7 @@ function Main( $scriptDir )
         $cmd = "mkdir `"$stormlogdir`""
         Invoke-CmdChk $cmd
     }
-    GiveFullPermissions "$stormlogdir" "Users"
+    GiveFullPermissions "$stormlogdir" "*S-1-5-32-545"
 
     Write-Log "Installation of storm completed successfully"
 }
