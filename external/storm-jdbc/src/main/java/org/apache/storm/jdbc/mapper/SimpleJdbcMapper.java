@@ -18,6 +18,7 @@
 package org.apache.storm.jdbc.mapper;
 
 import backtype.storm.tuple.ITuple;
+import org.apache.commons.lang.Validate;
 import org.apache.storm.jdbc.common.Column;
 import org.apache.storm.jdbc.common.ConnectionPrvoider;
 import org.apache.storm.jdbc.common.JdbcClient;
@@ -28,20 +29,23 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 public class SimpleJdbcMapper implements JdbcMapper {
 
     private List<Column> schemaColumns;
 
-    public SimpleJdbcMapper(String tableName, Map<String, Object> connectionProvideConfig, ConnectionPrvoider connectionPrvoider) {
+    public SimpleJdbcMapper(String tableName, ConnectionPrvoider connectionProvider) {
+        Validate.notEmpty(tableName);
+        Validate.notNull(connectionProvider);
+
         int queryTimeoutSecs = 30;
-        connectionPrvoider.prepare();
-        JdbcClient client = new JdbcClient(connectionPrvoider, queryTimeoutSecs);
+        connectionProvider.prepare();
+        JdbcClient client = new JdbcClient(connectionProvider, queryTimeoutSecs);
         this.schemaColumns = client.getColumnSchema(tableName);
     }
 
     public SimpleJdbcMapper(List<Column> schemaColumns) {
+        Validate.notEmpty(schemaColumns);
         this.schemaColumns = schemaColumns;
     }
 
