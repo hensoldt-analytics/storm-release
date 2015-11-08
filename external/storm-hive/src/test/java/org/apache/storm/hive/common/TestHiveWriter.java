@@ -27,6 +27,7 @@ import org.apache.hadoop.hive.ql.Driver;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hive.hcatalog.streaming.HiveEndPoint;
 import org.apache.hive.hcatalog.streaming.StreamingException;
+import org.apache.hive.hcatalog.streaming.SerializationError;
 import org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper;
 import org.apache.storm.hive.bolt.mapper.HiveMapper;
 import org.apache.storm.hive.bolt.HiveSetupUtil;
@@ -167,7 +168,7 @@ public class TestHiveWriter {
     }
 
     private void writeTuples(HiveWriter writer, HiveMapper mapper, int count)
-            throws HiveWriter.WriteFailure, InterruptedException {
+        throws HiveWriter.WriteFailure, SerializationError, InterruptedException {
         Integer id = 100;
         String msg = "test-123";
         for (int i = 1; i <= count; i++) {

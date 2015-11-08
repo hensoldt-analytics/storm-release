@@ -37,7 +37,7 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Map.Entry;
@@ -58,7 +58,7 @@ public class HiveBolt extends  BaseRichBolt {
     private Boolean kerberosEnabled = false;
     private Boolean sendHeartBeat = true;
     private UserGroupInformation ugi = null;
-    HashMap<HiveEndPoint, HiveWriter> allWriters;
+    private Map<HiveEndPoint, HiveWriter> allWriters;
     private List<Tuple> tupleBatch;
 
     public HiveBolt(HiveOptions options) {
@@ -87,7 +87,7 @@ public class HiveBolt extends  BaseRichBolt {
                 }
             }
             this.collector = collector;
-            allWriters = new HashMap<HiveEndPoint,HiveWriter>();
+            allWriters = new ConcurrentHashMap<HiveEndPoint,HiveWriter>();
             String timeoutName = "hive-bolt-%d";
             this.callTimeoutPool = Executors.newFixedThreadPool(1,
                                 new ThreadFactoryBuilder().setNameFormat(timeoutName).build());
@@ -122,22 +122,16 @@ public class HiveBolt extends  BaseRichBolt {
                     collector.ack(t);
                 tupleBatch.clear();
             }
+        } catch(SerializationError se) {
+            LOG.info("Serialization exception occurred, tuples will NOT be acknowledged");
+            collector.ack(tuple);
         } catch(Exception e) {
             this.collector.reportError(e);
             collector.fail(tuple);
-            try {
-                flushAndCloseWriters();
-                LOG.info("acknowledging tuples after writers flushed and closed");
-                for (Tuple t : tupleBatch)
-                    collector.ack(t);
-                tupleBatch.clear();
-            } catch (Exception e1) {
-                //If flushAndClose fails assume tuples are lost, do not ack
-                LOG.warn("Error while flushing and closing writers, tuples will NOT be acknowledged");
-                for (Tuple t : tupleBatch)
-                    collector.fail(t);
-                tupleBatch.clear();
-            }
+            abortWritersTransaction();
+            for (Tuple t : tupleBatch)
+                collector.fail(t);
+            tupleBatch.clear();
         }
     }
 
@@ -228,7 +222,6 @@ public class HiveBolt extends  BaseRichBolt {
 
     /**
      * Closes all writers and remove them from cache
-     * @return number of writers retired
      */
     private void closeAllWriters() {
         try {
@@ -243,17 +236,18 @@ public class HiveBolt extends  BaseRichBolt {
         }
     }
 
-    void flushAndCloseWriters() throws Exception {
+    /**
+     * Aborts current transaction in all Writers
+     */
+    void abortWritersTransaction()  {
         try {
-            flushAllWriters(false);
+            for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+                entry.getValue().abort();
+            }
         } catch(Exception e) {
-            LOG.warn("unable to flush hive writers. ", e);
-            throw e;
-        } finally {
-            closeAllWriters();
+            LOG.warn("unable to abort hive writer's current transaction. ", e);
         }
     }
-
 
     private HiveWriter getOrCreateWriter(HiveEndPoint endPoint)
         throws HiveWriter.ConnectFailure, InterruptedException {

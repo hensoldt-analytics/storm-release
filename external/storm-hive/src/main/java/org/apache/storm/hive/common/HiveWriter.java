@@ -92,7 +92,7 @@ public class HiveWriter {
      * @throws InterruptedException
      */
     public synchronized void write(final byte[] record)
-        throws WriteFailure, InterruptedException {
+        throws WriteFailure, SerializationError, InterruptedException {
         if (closed) {
             throw new IllegalStateException("This hive streaming writer was closed " +
                                             "and thus no longer able to write : " + endPoint);
@@ -107,6 +107,8 @@ public class HiveWriter {
                         return null;
                     }
                 });
+        } catch(SerializationError se) {
+            throw new SerializationError(endPoint.toString() + " SerializationError", se);
         } catch(StreamingException e) {
             throw new WriteFailure(endPoint, txnBatch.getCurrentTxnId(), e);
         } catch(TimeoutException e) {
@@ -126,16 +128,7 @@ public class HiveWriter {
         try {
             synchronized(txnBatchLock) {
                 commitTxn();
-                if(txnBatch.remainingTransactions() == 0) {
-                    closeTxnBatch();
-                    txnBatch = null;
-                    if(rollToNext) {
-                        txnBatch = nextTxnBatch(recordWriter);
-                    }
-                } else if(rollToNext) {
-                    LOG.debug("Switching to next Txn for {}", endPoint);
-                    txnBatch.beginNextTransaction(); // does not block
-                }
+                nextTxn(rollToNext);
             }
         } catch(StreamingException e) {
             throw new TxnFailure(txnBatch, e);
@@ -274,10 +267,17 @@ public class HiveWriter {
      * Aborts the current Txn and switches to next Txn.
      * @throws StreamingException if could not get new Transaction Batch, or switch to next Txn
      */
-    public void abort() throws InterruptedException {
-        abortTxn();
+    public void abort() throws StreamingException, TxnBatchFailure, InterruptedException {
+        synchronized(txnBatchLock) {
+            abortTxn();
+            nextTxn(true); // roll to next
+        }
     }
 
+
+    /**
+     * Aborts current Txn in the txnBatch.
+     */
     private void abortTxn() throws InterruptedException {
         LOG.info("Aborting Txn id {} on End Point {}", txnBatch.getCurrentTxnId(), endPoint);
         try {
@@ -298,6 +298,24 @@ public class HiveWriter {
         }
     }
 
+
+    /**
+     * if there are remainingTransactions in current txnBatch, begins nextTransactions
+     * otherwise creates new txnBatch.
+     * @param boolean rollToNext
+     */
+    private void nextTxn(boolean rollToNext) throws StreamingException, InterruptedException, TxnBatchFailure {
+        if(txnBatch.remainingTransactions() == 0) {
+            closeTxnBatch();
+            txnBatch = null;
+            if(rollToNext) {
+                txnBatch = nextTxnBatch(recordWriter);
+            }
+        } else if(rollToNext) {
+            LOG.debug("Switching to next Txn for {}", endPoint);
+            txnBatch.beginNextTransaction(); // does not block
+        }
+    }
 
     /**
      * If the current thread has been interrupted, then throws an

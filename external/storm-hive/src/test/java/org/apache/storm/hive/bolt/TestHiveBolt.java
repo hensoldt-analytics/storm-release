@@ -320,7 +320,6 @@ public class TestHiveBolt {
 
         //This forces a failure of all the flush attempts
         doThrow(new InterruptedException()).when(spyBolt).flushAllWriters(true);
-        doThrow(new Exception()).when(spyBolt).flushAndCloseWriters();
 
         spyBolt.prepare(config, null, new OutputCollector(collector));
 
