@@ -130,6 +130,15 @@ public class HiveState implements State {
         }
     }
 
+    private void abortAndCloseWriters() {
+        try {
+            sendHeartBeat = false;
+            abortAllWriters();
+            closeAllWriters();
+        }  catch(Exception ie) {
+            LOG.warn("unable to close hive connections. ", ie);
+        }
+    }
 
     /**
      * Abort current Txn on all writers
