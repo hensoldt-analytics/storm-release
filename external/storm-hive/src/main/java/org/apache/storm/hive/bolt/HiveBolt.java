@@ -128,10 +128,10 @@ public class HiveBolt extends  BaseRichBolt {
         } catch(Exception e) {
             this.collector.reportError(e);
             collector.fail(tuple);
-            abortWritersTransaction();
             for (Tuple t : tupleBatch)
                 collector.fail(t);
             tupleBatch.clear();
+            abortAndCloseWriters();
         }
     }
 
@@ -220,6 +220,25 @@ public class HiveBolt extends  BaseRichBolt {
         }
     }
 
+    void abortAndCloseWriters() {
+        try {
+            sendHeartBeat = false;
+            abortAllWriters();
+            closeAllWriters();
+        }  catch(Exception ie) {
+            LOG.warn("unable to close hive connections. ", ie);
+        }
+    }
+
+    /**
+     * Abort current Txn on all writers
+     */
+    private void abortAllWriters() throws InterruptedException, StreamingException, HiveWriter.TxnBatchFailure {
+        for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+            entry.getValue().abort();
+        }
+    }
+
     /**
      * Closes all writers and remove them from cache
      */
@@ -233,19 +252,6 @@ public class HiveBolt extends  BaseRichBolt {
             allWriters.clear();
         } catch(Exception e) {
             LOG.warn("unable to close writers. ", e);
-        }
-    }
-
-    /**
-     * Aborts current transaction in all Writers
-     */
-    void abortWritersTransaction()  {
-        try {
-            for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
-                entry.getValue().abort();
-            }
-        } catch(Exception e) {
-            LOG.warn("unable to abort hive writer's current transaction. ", e);
         }
     }
 
