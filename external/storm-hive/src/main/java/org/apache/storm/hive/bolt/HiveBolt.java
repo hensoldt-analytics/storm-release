@@ -123,7 +123,7 @@ public class HiveBolt extends  BaseRichBolt {
                 tupleBatch.clear();
             }
         } catch(SerializationError se) {
-            LOG.info("Serialization exception occurred, tuples will NOT be acknowledged");
+            LOG.info("Serialization exception occurred, tuples will NOT be acknowledged ", tuple);
             collector.ack(tuple);
         } catch(Exception e) {
             this.collector.reportError(e);
@@ -142,9 +142,9 @@ public class HiveBolt extends  BaseRichBolt {
 
     @Override
     public void cleanup() {
+        sendHeartBeat = false;
         for (Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
             try {
-                sendHeartBeat = false;
                 HiveWriter w = entry.getValue();
                 LOG.info("Flushing writer to {}", w);
                 w.flush(false);
@@ -171,6 +171,7 @@ public class HiveBolt extends  BaseRichBolt {
                 LOG.warn("shutdown interrupted on " + execService, ex);
             }
         }
+
         callTimeoutPool = null;
         super.cleanup();
         LOG.info("Hive Bolt stopped");
@@ -235,7 +236,11 @@ public class HiveBolt extends  BaseRichBolt {
      */
     private void abortAllWriters() throws InterruptedException, StreamingException, HiveWriter.TxnBatchFailure {
         for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
-            entry.getValue().abort();
+            try {
+                entry.getValue().abort();
+            } catch (Exception e) {
+                LOG.warn("Failed to abort hive transaction batch, HiveEndPoint ", entry.getKey());
+            }
         }
     }
 
@@ -243,16 +248,16 @@ public class HiveBolt extends  BaseRichBolt {
      * Closes all writers and remove them from cache
      */
     private void closeAllWriters() {
-        try {
-            //1) Retire writers
-            for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+        //1) Retire writers
+        for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+            try {
                 entry.getValue().close();
+            } catch(Exception e) {
+                LOG.warn("unable to close writers. ", e);
             }
-            //2) Clear cache
-            allWriters.clear();
-        } catch(Exception e) {
-            LOG.warn("unable to close writers. ", e);
         }
+        //2) Clear cache
+        allWriters.clear();
     }
 
     private HiveWriter getOrCreateWriter(HiveEndPoint endPoint)

@@ -46,14 +46,15 @@ public class HiveWriter {
     private final StreamingConnection connection;
     private final int txnsPerBatch;
     private final RecordWriter recordWriter;
-    private TransactionBatch txnBatch;
     private final ExecutorService callTimeoutPool;
     private final long callTimeout;
     private final Object txnBatchLock = new Object();
+    private TransactionBatch txnBatch;
     private long lastUsed; // time of last flush on this writer
     protected boolean closed; // flag indicating HiveWriter was closed
     private boolean autoCreatePartitions;
     private UserGroupInformation ugi;
+    private int totalRecordsPerTransaction = 0;
 
     public HiveWriter(HiveEndPoint endPoint, int txnsPerBatch,
                       boolean autoCreatePartitions, long callTimeout,
@@ -104,6 +105,7 @@ public class HiveWriter {
                     @Override
                     public Void call() throws StreamingException, InterruptedException {
                         txnBatch.write(record);
+                        totalRecordsPerTransaction++;
                         return null;
                     }
                 });
@@ -117,18 +119,20 @@ public class HiveWriter {
     }
 
     /**
-     * Commits the current Txn.
+     * Commits the current Txn if totalRecordsPerTransaction > 0 .
      * If 'rollToNext' is true, will switch to next Txn in batch or to a
      *       new TxnBatch if current Txn batch is exhausted
-     * TODO: see what to do when there are errors in each IO call stage
      */
     public void flush(boolean rollToNext)
         throws CommitFailure, TxnBatchFailure, TxnFailure, InterruptedException {
-        lastUsed = System.currentTimeMillis();
+        // if there are no records do not call flush
+        if (totalRecordsPerTransaction <= 0) return;
         try {
             synchronized(txnBatchLock) {
                 commitTxn();
                 nextTxn(rollToNext);
+                totalRecordsPerTransaction = 0;
+                lastUsed = System.currentTimeMillis();
             }
         } catch(StreamingException e) {
             throw new TxnFailure(txnBatch, e);
