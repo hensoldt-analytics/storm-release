@@ -135,18 +135,15 @@ public class HiveState implements State {
             sendHeartBeat = false;
             abortAllWriters();
             closeAllWriters();
-        } catch(InterruptedException e) {
-            LOG.warn("unable to close hive connections. ", e);
-        } catch(IOException ie) {
+        }  catch(Exception ie) {
             LOG.warn("unable to close hive connections. ", ie);
         }
     }
 
     /**
      * Abort current Txn on all writers
-     * @return number of writers retired
      */
-    private void abortAllWriters() throws InterruptedException {
+    private void abortAllWriters() throws InterruptedException, StreamingException, HiveWriter.TxnBatchFailure {
         for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
             entry.getValue().abort();
         }

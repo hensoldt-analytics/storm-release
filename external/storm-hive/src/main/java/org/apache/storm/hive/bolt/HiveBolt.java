@@ -23,6 +23,7 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
+import backtype.storm.utils.TupleUtils;
 import backtype.storm.Config;
 import org.apache.storm.hive.common.HiveWriter;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -92,6 +93,15 @@ public class HiveBolt extends  BaseRichBolt {
                                 new ThreadFactoryBuilder().setNameFormat(timeoutName).build());
             heartBeatTimer = new Timer();
             setupHeartBeatTimer();
+
+            // If interval is non-zero then it has already been explicitly set and we should not default it
+            if (conf.containsKey("topology.message.timeout.secs") && options.getTickTupleInterval() == 0)
+            {
+                Integer topologyTimeout = Integer.parseInt(conf.get("topology.message.timeout.secs").toString());
+                int tickTupleInterval = (int) (Math.floor(topologyTimeout / 2));
+                options.withTickTupleInterval(tickTupleInterval);
+                LOG.debug("Setting tick tuple interval to [" + tickTupleInterval + "] based on topology timeout");
+            }
         } catch(Exception e) {
             LOG.warn("unable to make connection to hive ", e);
         }
@@ -101,7 +111,7 @@ public class HiveBolt extends  BaseRichBolt {
     public void execute(Tuple tuple) {
         try {
             boolean forceFlush = false;
-            if (HiveUtils.isTick(tuple)) {
+            if (TupleUtils.isTick(tuple)) {
                 LOG.debug("TICK received! current batch status [" + tupleBatch.size() + "/" + options.getBatchSize() + "]");
                 forceFlush = true;
             } else {
@@ -121,22 +131,16 @@ public class HiveBolt extends  BaseRichBolt {
                     collector.ack(t);
                 tupleBatch.clear();
             }
+        } catch(SerializationError se) {
+            LOG.info("Serialization exception occurred, tuples will NOT be acknowledged ", tuple);
+            collector.ack(tuple);
         } catch(Exception e) {
             this.collector.reportError(e);
             collector.fail(tuple);
-            try {
-                flushAndCloseWriters();
-                LOG.info("acknowledging tuples after writers flushed and closed");
-                for (Tuple t : tupleBatch)
-                    collector.ack(t);
-                tupleBatch.clear();
-            } catch (Exception e1) {
-                //If flushAndClose fails assume tuples are lost, do not ack
-                LOG.warn("Error while flushing and closing writers, tuples will NOT be acknowledged");
-                for (Tuple t : tupleBatch)
-                    collector.fail(t);
-                tupleBatch.clear();
-            }
+            for (Tuple t : tupleBatch)
+                collector.fail(t);
+            tupleBatch.clear();
+            abortAndCloseWriters();
         }
     }
 
@@ -147,9 +151,9 @@ public class HiveBolt extends  BaseRichBolt {
 
     @Override
     public void cleanup() {
+        sendHeartBeat = false;
         for (Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
             try {
-                sendHeartBeat = false;
                 HiveWriter w = entry.getValue();
                 LOG.info("Flushing writer to {}", w);
                 w.flush(false);
@@ -176,6 +180,7 @@ public class HiveBolt extends  BaseRichBolt {
                 LOG.warn("shutdown interrupted on " + execService, ex);
             }
         }
+
         callTimeoutPool = null;
         super.cleanup();
         LOG.info("Hive Bolt stopped");
@@ -225,34 +230,44 @@ public class HiveBolt extends  BaseRichBolt {
         }
     }
 
+    void abortAndCloseWriters() {
+        try {
+            sendHeartBeat = false;
+            abortAllWriters();
+            closeAllWriters();
+        }  catch(Exception ie) {
+            LOG.warn("unable to close hive connections. ", ie);
+        }
+    }
+
+    /**
+     * Abort current Txn on all writers
+     */
+    private void abortAllWriters() throws InterruptedException, StreamingException, HiveWriter.TxnBatchFailure {
+        for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+            try {
+                entry.getValue().abort();
+            } catch (Exception e) {
+                LOG.warn("Failed to abort hive transaction batch, HiveEndPoint ", entry.getKey());
+            }
+        }
+    }
+
     /**
      * Closes all writers and remove them from cache
-     * @return number of writers retired
      */
     private void closeAllWriters() {
-        try {
-            //1) Retire writers
-            for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+        //1) Retire writers
+        for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+            try {
                 entry.getValue().close();
+            } catch(Exception e) {
+                LOG.warn("unable to close writers. ", e);
             }
-            //2) Clear cache
-            allWriters.clear();
-        } catch(Exception e) {
-            LOG.warn("unable to close writers. ", e);
         }
+        //2) Clear cache
+        allWriters.clear();
     }
-
-    void flushAndCloseWriters() throws Exception {
-        try {
-            flushAllWriters(false);
-        } catch(Exception e) {
-            LOG.warn("unable to flush hive writers. ", e);
-            throw e;
-        } finally {
-            closeAllWriters();
-        }
-    }
-
 
     private HiveWriter getOrCreateWriter(HiveEndPoint endPoint)
         throws HiveWriter.ConnectFailure, InterruptedException {
