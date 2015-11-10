@@ -132,7 +132,7 @@ public class HiveBolt extends  BaseRichBolt {
                 tupleBatch.clear();
             }
         } catch(SerializationError se) {
-            LOG.info("Serialization exception occurred, tuples will NOT be acknowledged ", tuple);
+            LOG.info("Serialization exception occurred, tuple is acknowledged but not written to Hive.", tuple);
             collector.ack(tuple);
         } catch(Exception e) {
             this.collector.reportError(e);
@@ -277,6 +277,7 @@ public class HiveBolt extends  BaseRichBolt {
                 LOG.debug("Creating Writer to Hive end point : " + endPoint);
                 writer = HiveUtils.makeHiveWriter(endPoint, callTimeoutPool, ugi, options);
                 if(allWriters.size() > options.getMaxOpenConnections()){
+                    LOG.info("Total HiveEndPoints " + allWriters.size());
                     int retired = retireIdleWriters();
                     if(retired==0) {
                         retireEldestWriter();
