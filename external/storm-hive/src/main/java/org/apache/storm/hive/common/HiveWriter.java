@@ -54,7 +54,7 @@ public class HiveWriter {
     protected boolean closed; // flag indicating HiveWriter was closed
     private boolean autoCreatePartitions;
     private UserGroupInformation ugi;
-    private int totalRecordsPerTransaction = 0;
+    private int totalRecords = 0;
 
     public HiveWriter(HiveEndPoint endPoint, int txnsPerBatch,
                       boolean autoCreatePartitions, long callTimeout,
@@ -105,7 +105,7 @@ public class HiveWriter {
                     @Override
                     public Void call() throws StreamingException, InterruptedException {
                         txnBatch.write(record);
-                        totalRecordsPerTransaction++;
+                        totalRecords++;
                         return null;
                     }
                 });
@@ -126,12 +126,12 @@ public class HiveWriter {
     public void flush(boolean rollToNext)
         throws CommitFailure, TxnBatchFailure, TxnFailure, InterruptedException {
         // if there are no records do not call flush
-        if (totalRecordsPerTransaction <= 0) return;
+        if (totalRecords <= 0) return;
         try {
             synchronized(txnBatchLock) {
                 commitTxn();
                 nextTxn(rollToNext);
-                totalRecordsPerTransaction = 0;
+                totalRecords = 0;
                 lastUsed = System.currentTimeMillis();
             }
         } catch(StreamingException e) {
@@ -165,6 +165,14 @@ public class HiveWriter {
                 // Suppressing exceptions as we don't care for errors on heartbeats
             }
         }
+    }
+
+    /**
+     * returns totalRecords written so far in a transaction
+     * @returns totalRecords
+     */
+    public int getTotalRecords() {
+        return totalRecords;
     }
 
     /**
