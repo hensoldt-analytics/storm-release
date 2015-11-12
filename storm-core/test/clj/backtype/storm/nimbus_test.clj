@@ -19,7 +19,7 @@
   (:require [backtype.storm.daemon [nimbus :as nimbus]])
   (:import [backtype.storm.testing TestWordCounter TestWordSpout TestGlobalCount
             TestAggregatesCounter TestPlannerSpout TestPlannerBolt]
-           [backtype.storm.nimbus InMemoryTopologyAcitonNotifier])
+           [backtype.storm.nimbus InMemoryTopologyActionNotifier])
   (:import [backtype.storm.scheduler INimbus])
   (:import [backtype.storm.nimbus ILeaderElector NimbusInfo])
   (:import [backtype.storm.generated Credentials NotAliveException SubmitOptions
@@ -1280,25 +1280,25 @@
           (submit-local-topology-with-opts nimbus "test" bad-config topology
                                            (SubmitOptions.))))))))
 
-;; if the user sends an empty log config, nimbus will say that all 
-;; log configs it contains are LogLevelAction/UNCHANGED
-(deftest empty-save-config-results-in-all-unchanged-actions
-  (with-local-cluster [cluster]
-    (let [nimbus (:nimbus cluster)
-          previous-config (LogConfig.)
-          level (LogLevel.)
-          mock-config (LogConfig.)]
-      ;; send something with content to nimbus beforehand
-      (.set_target_log_level level "ERROR")
-      (.set_action level LogLevelAction/UPDATE)
-      (.put_to_named_logger_level previous-config "test" level)
-      (stubbing [nimbus/check-storm-active! nil
-                 nimbus/try-read-storm-conf {}]
-        (.setLogConfig nimbus "foo" previous-config)
-        (.setLogConfig nimbus "foo" mock-config)
-        (let [saved-config (.getLogConfig nimbus "foo")
-              levels (.get_named_logger_level saved-config)]
-           (is (= (.get_action (.get levels "test")) LogLevelAction/UNCHANGED)))))))
+(deftest test-topology-action-notifier
+  (with-inprocess-zookeeper zk-port
+    (with-local-tmp [nimbus-dir]
+      (stubbing [zk-leader-elector (mock-leader-elector)]
+        (letlocals
+          (bind conf (merge (read-storm-config)
+                       {STORM-ZOOKEEPER-SERVERS ["localhost"]
+                        STORM-CLUSTER-MODE "local"
+                        STORM-ZOOKEEPER-PORT zk-port
+                        STORM-LOCAL-DIR nimbus-dir
+                        NIMBUS-TOPOLOGY-ACTION-NOTIFIER-PLUGIN (.getName InMemoryTopologyAcitonNotifier)}))
+          (bind cluster-state (cluster/mk-storm-cluster-state conf))
+          (bind nimbus (nimbus/service-handler conf (nimbus/standalone-nimbus)))
+          (bind notifier (InMemoryTopologyAcitonNotifier.))
+          (sleep-secs 1)
+          (bind topology (thrift/mk-topology
+                           {"1" (thrift/mk-spout-spec (TestPlannerSpout. true) :parallelism-hint 3)}
+                           {}))
+          (submit-local-topology nimbus "test-notification" {TOPOLOGY-MESSAGE-TIMEOUT-SECS 30} topology)
 
 (deftest log-level-update-merges-and-flags-existent-log-level
   (with-local-cluster [cluster]
