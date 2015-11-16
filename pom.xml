@@ -15,7 +15,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -27,7 +27,7 @@
 
     <groupId>org.apache.storm</groupId>
     <artifactId>storm</artifactId>
-    <version>0.10.0-SNAPSHOT</version>
+    <version>0.10.0.2.3.3.0-3037</version>
     <packaging>pom</packaging>
     <name>Storm</name>
     <description>Distributed and fault-tolerant realtime computation</description>
@@ -219,13 +219,13 @@
         <clojure-complete.version>0.2.3</clojure-complete.version>
         <mockito.version>1.9.5</mockito.version>
         <conjure.version>2.1.3</conjure.version>
-        <zookeeper.version>3.4.6</zookeeper.version>
+        <zookeeper.version>3.4.6.2.3.3.0-3037</zookeeper.version>
         <clojure-data-codec.version>0.1.0</clojure-data-codec.version>
         <clojure-contrib.version>1.2.0</clojure-contrib.version>
-        <hive.version>0.14.0</hive.version>
-        <hadoop.version>2.6.0</hadoop.version>
-        <hbase.version>1.0.0</hbase.version>
-        <kafka.version>0.8.2.2.3.0.0-2557</kafka.version>
+        <hive.version>1.2.1.2.3.3.0-3037</hive.version>
+        <hadoop.version>2.7.1.2.3.3.0-3037</hadoop.version>
+        <hbase.version>1.1.2.2.3.3.0-3037</hbase.version>
+        <kafka.version>0.8.2.2.3.3.0-3037</kafka.version>
         <kryo.version>2.21</kryo.version>
     </properties>
 
