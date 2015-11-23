@@ -537,9 +537,9 @@
                (catch InterruptedException e
                  (log-message log-prefix " interrupted.")))
              (exit-code-callback (.exitValue process)))
-           nil)))                    
+           nil)))
       process)))
-   
+
 (defn exists-file?
   [path]
   (.exists (File. path)))
@@ -598,11 +598,11 @@
   (let [storm-dir (System/getProperty "storm.home")
         storm-lib-dir (str storm-dir file-path-separator "lib")
         storm-conf-dir (if-let [confdir (System/getenv "STORM_CONF_DIR")]
-                         confdir 
+                         confdir
                          (str storm-dir file-path-separator "conf"))
         storm-extlib-dir (str storm-dir file-path-separator "extlib")
         extcp (System/getenv "STORM_EXT_CLASSPATH")]
-    (if (nil? storm-dir) 
+    (if (nil? storm-dir)
       (current-classpath)
       (str/join class-path-separator
                 (concat (get-full-jars storm-lib-dir) (get-full-jars storm-extlib-dir) [extcp] [storm-conf-dir])))))
@@ -1019,8 +1019,8 @@
   ([x form & more] `(-<> (-<> ~x ~form) ~@more)))
 
 (def LOG-DIR
-  (.getCanonicalPath 
-                (clojure.java.io/file (System/getProperty "storm.home") "logs")))
+  (.getCanonicalPath
+   (clojure.java.io/file (or (System/getProperty "storm.log.dir") (str (System/getProperty "storm.home") "logs")))))
 
 (defn- logs-rootname [storm-id port]
   (str storm-id "-worker-" port))
@@ -1069,4 +1069,3 @@
   (if (contains? coll k)
     (assoc coll k (apply str (repeat (count (coll k)) "#")))
     coll))
-
