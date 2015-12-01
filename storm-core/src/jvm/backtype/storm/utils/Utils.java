@@ -667,4 +667,23 @@ public class Utils {
         }
     }
 
+    public static TopologyInfo getTopologyInfo(String name, String asUser, Map stormConf) {
+        NimbusClient client = NimbusClient.getConfiguredClientAs(stormConf, asUser);
+        TopologyInfo topologyInfo = null;
+        try {
+            ClusterSummary summary = client.getClient().getClusterInfo();
+            for(TopologySummary s : summary.get_topologies()) {
+                if(s.get_name().equals(name)) {
+                    topologyInfo = client.getClient().getTopologyInfo(s.get_id());
+                }
+            }
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            client.close();
+        }
+        return topologyInfo;
+    }
+
+
 }

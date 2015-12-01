@@ -18,9 +18,10 @@
 package backtype.storm;
 
 import backtype.storm.generated.StormTopology;
+import backtype.storm.generated.TopologyInfo;
 
 import java.util.Map;
 
 public interface ISubmitterHook {
-    public void notify(String name, Map stormConf, StormTopology topology) throws IllegalAccessException;
+    public void notify(TopologyInfo topologyInfo, Map stormConf, StormTopology topology) throws IllegalAccessException;
 }

@@ -67,11 +67,11 @@
                     forced-scheduler
                     (do (log-message "Using forced scheduler from INimbus " (class forced-scheduler))
                         forced-scheduler)
-    
+
                     (conf STORM-SCHEDULER)
                     (do (log-message "Using custom scheduler: " (conf STORM-SCHEDULER))
                         (-> (conf STORM-SCHEDULER) new-instance))
-    
+
                     :else
                     (do (log-message "Using default scheduler")
                         (DefaultScheduler.)))]
@@ -90,7 +90,7 @@
           (throw (RuntimeException. (str "not a leader, current leader is " leader-address))))))))
 
 (def NIMBUS-ZK-ACLS
-  [(first ZooDefs$Ids/CREATOR_ALL_ACL) 
+  [(first ZooDefs$Ids/CREATOR_ALL_ACL)
    (ACL. (bit-or ZooDefs$Perms/READ ZooDefs$Perms/CREATE) ZooDefs$Ids/ANYONE_ID_UNSAFE)])
 
 (defn create-tology-action-notifier [conf]
@@ -840,7 +840,7 @@
       (throw (AlreadyAliveException. (str storm-name " is already active"))))
     ))
 
-(defn check-authorization! 
+(defn check-authorization!
   ([nimbus storm-name storm-conf operation context]
      (let [aclHandler (:authorization-handler nimbus)
            impersonation-authorizer (:impersonation-authorization-handler nimbus)
@@ -1012,8 +1012,8 @@
   (if (some #(.contains name %) DISALLOWED-TOPOLOGY-NAME-STRS)
     (throw (InvalidTopologyException.
             (str "Topology name cannot contain any of the following: " (pr-str DISALLOWED-TOPOLOGY-NAME-STRS))))
-  (if (clojure.string/blank? name) 
-    (throw (InvalidTopologyException. 
+  (if (clojure.string/blank? name)
+    (throw (InvalidTopologyException.
             ("Topology name cannot be blank"))))))
 
 ;; We will only file at <Storm dist root>/<Topology ID>/<File>
@@ -1076,17 +1076,17 @@
         num-executors (->> (all-components topology) (map-val num-start-executors))
         executors-count (reduce + (vals num-executors))
         executors-allowed (get nimbus-conf NIMBUS-EXECUTORS-PER-TOPOLOGY)]
-    (when (and 
+    (when (and
            (not (nil? executors-allowed))
            (> executors-count executors-allowed))
-      (throw 
-       (InvalidTopologyException. 
+      (throw
+       (InvalidTopologyException.
         (str "Failed to submit topology. Topology requests more than " executors-allowed " executors."))))
     (when (and
            (not (nil? workers-allowed))
            (> workers-count workers-allowed))
-      (throw 
-       (InvalidTopologyException. 
+      (throw
+       (InvalidTopologyException.
         (str "Failed to submit topology. Topology requests more than " workers-allowed " workers."))))))
 
 (defn- set-logger-timeouts [log-config]
@@ -1198,7 +1198,7 @@
                 storm-cluster-state (:storm-cluster-state nimbus)]
             (when credentials (doseq [nimbus-autocred-plugin (:nimbus-autocred-plugins nimbus)]
               (.populateCredentials nimbus-autocred-plugin credentials (Collections/unmodifiableMap storm-conf))))
-            (if (and (conf SUPERVISOR-RUN-WORKER-AS-USER) (or (nil? submitter-user) (.isEmpty (.trim submitter-user)))) 
+            (if (and (conf SUPERVISOR-RUN-WORKER-AS-USER) (or (nil? submitter-user) (.isEmpty (.trim submitter-user))))
               (throw (AuthorizationException. "Could not determine the user to run this topology as.")))
             (system-topology! total-storm-conf topology) ;; this validates the structure of the topology
             (validate-topology-size topo-conf conf topology)
@@ -1226,12 +1226,12 @@
           (catch Throwable e
             (log-warn-error e "Topology submission exception. (topology name='" storm-name "')")
             (throw e))))
-      
+
       (^void submitTopology
         [this ^String storm-name ^String uploadedJarLocation ^String serializedConf ^StormTopology topology]
         (.submitTopologyWithOpts this storm-name uploadedJarLocation serializedConf topology
                                  (SubmitOptions. TopologyInitialStatus/ACTIVE)))
-      
+
       (^void killTopology [this ^String name]
          (.killTopologyWithOpts this name (KillOptions.)))
 
@@ -1435,10 +1435,10 @@
                                                             (->> (:executor->node+port assignment)
                                                                  keys
                                                                  (mapcat executor-id->tasks)
-                                                                 count) 
+                                                                 count)
                                                             (->> (:executor->node+port assignment)
                                                                  keys
-                                                                 count)                                                            
+                                                                 count)
                                                             (->> (:executor->node+port assignment)
                                                                  vals
                                                                  set
@@ -1456,7 +1456,7 @@
                            topology-summaries
                            nimbuses)
           ))
-      
+
       (^TopologyInfo getTopologyInfoWithOpts [this ^String storm-id ^GetInfoOptions options]
         (let [storm-cluster-state (:storm-cluster-state nimbus)
               topology-conf (try-read-storm-conf conf storm-id)
@@ -1508,7 +1508,7 @@
                            )]
             (when-let [owner (:owner base)] (.set_owner topo-info owner))
             (when-let [sched-status (.get @(:id->sched-status nimbus) storm-id)] (.set_sched_status topo-info sched-status))
-            (.set_replication_count topo-info (.getReplicationCount (:code-distributor nimbus) storm-id))
+            (.set_replication_count topo-info (if (:code-distributor nimbus) (.getReplicationCount (:code-distributor nimbus) storm-id) 1))
             topo-info
           ))
 
@@ -1591,7 +1591,7 @@
   (validate-distributed-mode! conf)
   (validate-port-available conf)
   (let [service-handler (service-handler conf nimbus)
-        server (ThriftServer. conf (Nimbus$Processor. service-handler) 
+        server (ThriftServer. conf (Nimbus$Processor. service-handler)
                               ThriftConnectionType/NIMBUS)]
     (add-shutdown-hook-with-force-kill-in-1-sec (fn []
                                                   (.shutdown service-handler)

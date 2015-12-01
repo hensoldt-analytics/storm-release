@@ -16,12 +16,13 @@
 
 (ns backtype.storm.LocalCluster
   (:use [backtype.storm testing config util])
+  (:import [backtype.storm.utils Utils])
   (:import [java.util Map])
   (:gen-class
     :init init
     :implements [backtype.storm.ILocalCluster]
     :constructors {[] []
-                   [Boolean] []
+                   [java.util.Map] []
                    [String Long] []}
     :state state))
 
@@ -36,18 +37,20 @@
                                                      STORM-ZOOKEEPER-SERVERS (list zk-host)
                                                      STORM-ZOOKEEPER-PORT zk-port})]
      [[] ret]))
-  ([^Boolean nimbus-daemon]
-     (let [ret (mk-local-storm-cluster
-                :daemon-conf
-                {TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS true} :nimbus-daemon nimbus-daemon)]
-       [[] ret])))
+  ([^Map stateMap]
+     [[] stateMap]))
+
+(defn submit-hook [hook name conf topology]
+  (let [topologyInfo (Utils/getTopologyInfo name nil conf)]
+    (.notify hook topologyInfo conf topology)))
 
 (defn -submitTopology
   [this name conf topology]
   (submit-local-topology
     (:nimbus (. this state)) name conf topology)
   (let [hook (get-configured-class conf STORM-TOPOLOGY-SUBMISSION-NOTIFIER-PLUGIN)]
-    (when hook (.notify hook name conf topology))))
+    (when hook (submit-hook hook name conf topology))))
+
 
 (defn -submitTopologyWithOpts
   [this name conf topology submit-opts]
