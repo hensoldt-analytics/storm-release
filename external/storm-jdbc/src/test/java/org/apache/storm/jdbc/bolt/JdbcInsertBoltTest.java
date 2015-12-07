@@ -19,7 +19,7 @@ package org.apache.storm.jdbc.bolt;
 
 import com.google.common.collect.Lists;
 import org.apache.storm.jdbc.common.Column;
-import org.apache.storm.jdbc.common.ConnectionPrvoider;
+import org.apache.storm.jdbc.common.ConnectionProvider;
 import org.apache.storm.jdbc.common.HikariCPConnectionProvider;
 import org.apache.storm.jdbc.mapper.JdbcMapper;
 import org.apache.storm.jdbc.mapper.SimpleJdbcMapper;
@@ -35,7 +35,7 @@ public class JdbcInsertBoltTest {
 
     @Test
     public void testValidation() {
-        ConnectionPrvoider provider = new HikariCPConnectionProvider(new HashMap<String, Object>());
+        ConnectionProvider provider = new HikariCPConnectionProvider(new HashMap<String, Object>());
         JdbcMapper mapper = new SimpleJdbcMapper(Lists.newArrayList(new Column("test", 0)));
         expectIllegaArgs(null, mapper);
         expectIllegaArgs(provider, null);
@@ -59,7 +59,7 @@ public class JdbcInsertBoltTest {
         }
     }
 
-    private void expectIllegaArgs(ConnectionPrvoider provider, JdbcMapper mapper) {
+    private void expectIllegaArgs(ConnectionProvider provider, JdbcMapper mapper) {
         try {
             JdbcInsertBolt bolt = new JdbcInsertBolt(provider, mapper);
             Assert.fail("Should have thrown IllegalArgumentException.");
