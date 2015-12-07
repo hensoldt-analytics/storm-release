@@ -22,7 +22,7 @@ import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.base.BaseRichBolt;
 import org.apache.commons.lang.Validate;
-import org.apache.storm.jdbc.common.ConnectionPrvoider;
+import org.apache.storm.jdbc.common.ConnectionProvider;
 import org.apache.storm.jdbc.common.JdbcClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,29 +37,29 @@ public abstract class AbstractJdbcBolt extends BaseRichBolt {
     protected transient JdbcClient jdbcClient;
     protected String configKey;
     protected Integer queryTimeoutSecs;
-    protected ConnectionPrvoider connectionPrvoider;
+    protected ConnectionProvider connectionProvider;
 
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector collector) {
         this.collector = collector;
 
-        connectionPrvoider.prepare();
+        connectionProvider.prepare();
 
         if(queryTimeoutSecs == null) {
             queryTimeoutSecs = Integer.parseInt(map.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS).toString());
         }
 
-        this.jdbcClient = new JdbcClient(connectionPrvoider, queryTimeoutSecs);
+        this.jdbcClient = new JdbcClient(connectionProvider, queryTimeoutSecs);
     }
 
 
-    public AbstractJdbcBolt(ConnectionPrvoider connectionProvider) {
+    public AbstractJdbcBolt(ConnectionProvider connectionProvider) {
         Validate.notNull(connectionProvider);
-        this.connectionPrvoider = connectionProvider;
+        this.connectionProvider = connectionProvider;
     }
 
     @Override
     public void cleanup() {
-        connectionPrvoider.cleanup();
+        connectionProvider.cleanup();
     }
 }

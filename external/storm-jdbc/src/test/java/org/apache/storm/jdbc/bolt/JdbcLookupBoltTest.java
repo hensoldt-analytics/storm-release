@@ -20,7 +20,7 @@ package org.apache.storm.jdbc.bolt;
 import backtype.storm.tuple.Fields;
 import com.google.common.collect.Lists;
 import org.apache.storm.jdbc.common.Column;
-import org.apache.storm.jdbc.common.ConnectionPrvoider;
+import org.apache.storm.jdbc.common.ConnectionProvider;
 import org.apache.storm.jdbc.common.HikariCPConnectionProvider;
 import org.apache.storm.jdbc.mapper.JdbcLookupMapper;
 import org.apache.storm.jdbc.mapper.SimpleJdbcLookupMapper;
@@ -36,7 +36,7 @@ public class JdbcLookupBoltTest {
 
     @Test
     public void testValidation() {
-        ConnectionPrvoider provider = new HikariCPConnectionProvider(new HashMap<String, Object>());
+        ConnectionProvider provider = new HikariCPConnectionProvider(new HashMap<String, Object>());
         JdbcLookupMapper mapper = new SimpleJdbcLookupMapper(new Fields("test"), Lists.newArrayList(new Column("test", 0)));
         String selectQuery = "select * from dual";
         expectIllegaArgs(null, selectQuery, mapper);
@@ -44,7 +44,7 @@ public class JdbcLookupBoltTest {
         expectIllegaArgs(provider, selectQuery, null);
     }
 
-    private void expectIllegaArgs(ConnectionPrvoider provider, String selectQuery, JdbcLookupMapper mapper) {
+    private void expectIllegaArgs(ConnectionProvider provider, String selectQuery, JdbcLookupMapper mapper) {
         try {
             JdbcLookupBolt bolt = new JdbcLookupBolt(provider, selectQuery, mapper);
             Assert.fail("Should have thrown IllegalArgumentException.");
