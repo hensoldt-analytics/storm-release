@@ -21,6 +21,7 @@ package org.apache.storm.hive.bolt;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
+import backtype.storm.utils.TupleUtils;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.Config;
@@ -112,7 +113,7 @@ public class HiveBolt extends  BaseRichBolt {
     public void execute(Tuple tuple) {
         try {
             boolean forceFlush = false;
-            if (HiveUtils.isTick(tuple)) {
+            if (TupleUtils.isTick(tuple)) {
                 LOG.debug("TICK received! current batch status [" + tupleBatch.size() + "/" + options.getBatchSize() + "]");
                 forceFlush = true;
             } else {
