@@ -176,6 +176,14 @@ public class HiveWriter {
     }
 
     /**
+     * Flush and Close current transactionBatch.
+     */
+    public void flushAndClose() throws TxnBatchFailure, TxnFailure, CommitFailure,
+            IOException, InterruptedException {
+        flush(false);
+        close();
+    }
+    /**
      * Close the Transaction Batch and connection
      * @throws IOException
      * @throws InterruptedException

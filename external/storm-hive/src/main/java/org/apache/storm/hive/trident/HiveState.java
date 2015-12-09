@@ -202,7 +202,7 @@ public class HiveState implements State {
             if( writer == null ) {
                 LOG.info("Creating Writer to Hive end point : " + endPoint);
                 writer = HiveUtils.makeHiveWriter(endPoint, callTimeoutPool, ugi, options);
-                if(allWriters.size() > options.getMaxOpenConnections()){
+                if(allWriters.size() > (options.getMaxOpenConnections() - 1)){
                     int retired = retireIdleWriters();
                     if(retired==0) {
                         retireEldestWriter();

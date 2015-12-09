@@ -26,12 +26,6 @@ import org.apache.hive.hcatalog.streaming.*;
 
 
 public class HiveOptions implements Serializable {
-    /**
-     * A low default value so that tuples are flushed and acked as soon as possible to avoid
-     * replay and spouts can continue emitting without hitting TOPOLOGY_MAX_SPOUT_PENDING.
-     */
-    private static final int DEFAULT_TICK_TUPLE_INTERVAL_SECS = 1;
-
     protected HiveMapper mapper;
     protected String databaseName;
     protected String tableName;
@@ -39,13 +33,13 @@ public class HiveOptions implements Serializable {
     protected Integer txnsPerBatch = 100;
     protected Integer maxOpenConnections = 10;
     protected Integer batchSize = 15000;
-    protected Integer idleTimeout = 0;
+    protected Integer idleTimeout = 60000;
     protected Integer callTimeout = 0;
     protected Integer heartBeatInterval = 60;
     protected Boolean autoCreatePartitions = true;
     protected String kerberosPrincipal;
     protected String kerberosKeytab;
-    protected Integer tickTupleInterval = DEFAULT_TICK_TUPLE_INTERVAL_SECS;
+    protected Integer tickTupleInterval = 0;
 
     public HiveOptions(String metaStoreURI,String databaseName,String tableName,HiveMapper mapper) {
         this.metaStoreURI = metaStoreURI;

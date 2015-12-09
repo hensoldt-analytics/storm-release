@@ -23,7 +23,6 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.topology.base.BaseRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.utils.TupleUtils;
 import backtype.storm.Config;
 import org.apache.storm.hive.common.HiveWriter;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
@@ -56,14 +55,14 @@ public class HiveBolt extends  BaseRichBolt {
     private ExecutorService callTimeoutPool;
     private transient Timer heartBeatTimer;
     private Boolean kerberosEnabled = false;
-    private Boolean sendHeartBeat = true;
+    private AtomicBoolean sendHeartBeat = new AtomicBoolean(false);
     private UserGroupInformation ugi = null;
     private Map<HiveEndPoint, HiveWriter> allWriters;
     private List<Tuple> tupleBatch;
 
     public HiveBolt(HiveOptions options) {
         this.options = options;
-        tupleBatch = new LinkedList<>();
+        tupleBatch = new LinkedList<Tuple>();
     }
 
     @Override
@@ -91,9 +90,19 @@ public class HiveBolt extends  BaseRichBolt {
             String timeoutName = "hive-bolt-%d";
             this.callTimeoutPool = Executors.newFixedThreadPool(1,
                                 new ThreadFactoryBuilder().setNameFormat(timeoutName).build());
+
+            sendHeartBeat.set(true);
             heartBeatTimer = new Timer();
             setupHeartBeatTimer();
 
+            // If interval is non-zero then it has already been explicitly set and we should not default it
+            if (conf.containsKey("topology.message.timeout.secs") && options.getTickTupleInterval() == 0)
+            {
+                Integer topologyTimeout = Integer.parseInt(conf.get("topology.message.timeout.secs").toString());
+                int tickTupleInterval = (int) (Math.floor(topologyTimeout / 2));
+                options.withTickTupleInterval(tickTupleInterval);
+                LOG.debug("Setting tick tuple interval to [" + tickTupleInterval + "] based on topology timeout");
+            }
         } catch(Exception e) {
             LOG.warn("unable to make connection to hive ", e);
         }
@@ -103,7 +112,7 @@ public class HiveBolt extends  BaseRichBolt {
     public void execute(Tuple tuple) {
         try {
             boolean forceFlush = false;
-            if (TupleUtils.isTick(tuple)) {
+            if (HiveUtils.isTick(tuple)) {
                 LOG.debug("TICK received! current batch status [" + tupleBatch.size() + "/" + options.getBatchSize() + "]");
                 forceFlush = true;
             } else {
@@ -125,6 +134,7 @@ public class HiveBolt extends  BaseRichBolt {
             }
         } catch(SerializationError se) {
             LOG.info("Serialization exception occurred, tuple is acknowledged but not written to Hive.", tuple);
+            this.collector.reportError(se);
             collector.ack(tuple);
         } catch(Exception e) {
             this.collector.reportError(e);
@@ -143,14 +153,11 @@ public class HiveBolt extends  BaseRichBolt {
 
     @Override
     public void cleanup() {
-        sendHeartBeat = false;
+        sendHeartBeat.set(false);
         for (Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
             try {
                 HiveWriter w = entry.getValue();
-                LOG.info("Flushing writer to {}", w);
-                w.flush(false);
-                LOG.info("Closing writer to {}", w);
-                w.close();
+                w.flushAndClose();
             } catch (Exception ex) {
                 LOG.warn("Error while closing writer to " + entry.getKey() +
                          ". Exception follows.", ex);
@@ -196,7 +203,7 @@ public class HiveBolt extends  BaseRichBolt {
                     @Override
                     public void run() {
                         try {
-                            if (sendHeartBeat) {
+                            if (sendHeartBeat.get()) {
                                 LOG.debug("Start sending heartbeat on all writers");
                                 sendHeartBeatOnAllWriters();
                                 setupHeartBeatTimer();
@@ -224,7 +231,6 @@ public class HiveBolt extends  BaseRichBolt {
 
     void abortAndCloseWriters() {
         try {
-            sendHeartBeat = false;
             abortAllWriters();
             closeAllWriters();
         }  catch(Exception ie) {
@@ -265,17 +271,18 @@ public class HiveBolt extends  BaseRichBolt {
         throws HiveWriter.ConnectFailure, InterruptedException {
         try {
             HiveWriter writer = allWriters.get( endPoint );
-            if( writer == null ) {
+            if (writer == null) {
                 LOG.debug("Creating Writer to Hive end point : " + endPoint);
                 writer = HiveUtils.makeHiveWriter(endPoint, callTimeoutPool, ugi, options);
-                if(allWriters.size() > options.getMaxOpenConnections()){
+                if (allWriters.size() > (options.getMaxOpenConnections() - 1)) {
+                    LOG.info("cached HiveEndPoint size {} exceeded maxOpenConnections {} ", allWriters.size(), options.getMaxOpenConnections());
                     int retired = retireIdleWriters();
                     if(retired==0) {
                         retireEldestWriter();
                     }
-                    LOG.info("Total Hive Writers " + allWriters.size());
                 }
                 allWriters.put(endPoint, writer);
+                HiveUtils.logAllHiveEndPoints(allWriters);
             }
             return writer;
         } catch (HiveWriter.ConnectFailure e) {
@@ -288,22 +295,25 @@ public class HiveBolt extends  BaseRichBolt {
      * Locate writer that has not been used for longest time and retire it
      */
     private void retireEldestWriter() {
+        LOG.info("Attempting close eldest writers");
         long oldestTimeStamp = System.currentTimeMillis();
         HiveEndPoint eldest = null;
         for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
-            if(entry.getValue().getLastUsed() < oldestTimeStamp) {
+            if (entry.getValue().getLastUsed() < oldestTimeStamp) {
                 eldest = entry.getKey();
                 oldestTimeStamp = entry.getValue().getLastUsed();
             }
         }
         try {
             LOG.info("Closing least used Writer to Hive end point : " + eldest);
-            allWriters.remove(eldest).close();
+            allWriters.remove(eldest).flushAndClose();
         } catch (IOException e) {
             LOG.warn("Failed to close writer for end point: " + eldest, e);
         } catch (InterruptedException e) {
             LOG.warn("Interrupted when attempting to close writer for end point: " + eldest, e);
             Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            LOG.warn("Interrupted when attempting to close writer for end point: " + eldest, e);
         }
     }
 
@@ -312,6 +322,7 @@ public class HiveBolt extends  BaseRichBolt {
      * @return number of writers retired
      */
     private int retireIdleWriters() {
+        LOG.info("Attempting close idle writers");
         int count = 0;
         long now = System.currentTimeMillis();
         ArrayList<HiveEndPoint> retirees = new ArrayList<HiveEndPoint>();
@@ -327,12 +338,14 @@ public class HiveBolt extends  BaseRichBolt {
         for(HiveEndPoint ep : retirees) {
             try {
                 LOG.info("Closing idle Writer to Hive end point : {}", ep);
-                allWriters.remove(ep).close();
+                allWriters.remove(ep).flushAndClose();
             } catch (IOException e) {
                 LOG.warn("Failed to close writer for end point: {}. Error: "+ ep, e);
             } catch (InterruptedException e) {
                 LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
                 Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
             }
         }
         return count;
