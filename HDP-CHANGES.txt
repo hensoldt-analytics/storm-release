@@ -1,14 +1,12 @@
 Changes only in Hortonworks github and not in Apache Storm release 0.10.0-beta1 and hence not covered by CHANGELOG.md
 
- * STORM-583: Add Microsoft Azure Event Hub spout implementations
- * STORM-713: Include topic information with Kafka metrics.
- * STORM-708: CORS support for STORM UI.
- * STORM-741: Allow users to pass a config value to perform impersonation.
- * STORM-724: Document RedisStoreBolt and RedisLookupBolt which is missed.
- * STORM-711: All connectors should use collector.reportError and tuple anchoring.
- * STORM-714: Make CSS more consistent with self, prev release
- * STORM-703: With hash key option for RedisMapState, only get values for keys in batch
- * STORM-691: Add basic lookup / persist bolts
- * STORM-727: Storm tests should succeed even if a storm process is running locally.
- * Storm kafka security changes
- * STORM-166: Highly Available Nimbus
+ * STORM-1030: Hive Connector Fixes.
+ * STORM-1203. worker metadata file creation doesn't use storm.log.dir config.
+ * STORM-1102: Add a default flush interval for HiveBolt.
+ * STORM-742: Let ShellBolt treat all messages to update heartbeat
+ * STORM-139: hashCode does not work for byte[]
+ * STORM-1147: Storm JDBCBolt should add validation to ensure either insertQuery or table name is specified and not both.
+ * STORM-1017: If ignoreZkOffsets set true,KafkaSpout will reset zk offset when recover from failure.
+ * STORM-996: netty-unit-tests/test-batch demonstrates out-of-order delivery
+ * STORM-992: A bug in the timer.clj might cause unexpected delay to schedule new event
+ * STORM-412: Allow users to modify logging levels of running topologies
