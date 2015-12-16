@@ -46,6 +46,16 @@ public class ReqContext {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReqContext.class);
 
+    @Override
+    public String toString() {
+        return "ReqContext{" +
+                "realPrincipal=" + ((realPrincipal != null) ? realPrincipal.getName() : "null") +
+                ", _reqID=" + _reqID +
+                ", _remoteAddr=" + _remoteAddr +
+                ", _authZPrincipal=" + ((principal() != null) ? principal().getName() : "null") +
+                ", ThreadId=" + Thread.currentThread().toString() +
+                '}';
+    }
 
     /**
      * Get a request context associated with current thread
@@ -129,7 +139,7 @@ public class ReqContext {
      * @return
      */
     public boolean isImpersonating() {
-        return this.realPrincipal != null;
+        return this.realPrincipal != null && !this.realPrincipal.equals(this.principal());
     }
     
     /**

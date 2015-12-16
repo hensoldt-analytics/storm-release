@@ -960,7 +960,10 @@
                                   [(str key) (level-to-dict val)]))]
       {"namedLoggerLevels" named-logger-levels})))
 
-(defn topology-config [topology-id]
+(defn topology-config [topology-id servlet-request]
+  (let [context (ReqContext/context)]
+    (when http-creds-handler (.populateContext http-creds-handler context servlet-request)))
+
   (thrift/with-configured-nimbus-connection nimbus
      (from-json (.getTopologyConf ^Nimbus$Client nimbus topology-id))))
 
@@ -1010,21 +1013,21 @@
        (json-response (all-topologies-summary) (:callback m)))
   (GET  "/api/v1/topology/:id" [:as {:keys [cookies servlet-request]} id & m]
         (let [user (.getUserName http-creds-handler servlet-request)]
-          (assert-authorized-user servlet-request "getTopology" (topology-config id))
+          (assert-authorized-user servlet-request "getTopology" (topology-config id servlet-request))
           (json-response (topology-page id (:window m) (check-include-sys? (:sys m)) user) (:callback m))))
   (GET "/api/v1/topology/:id/visualization" [:as {:keys [cookies servlet-request]} id & m]
-        (assert-authorized-user servlet-request "getTopology" (topology-config id))
+        (assert-authorized-user servlet-request "getTopology" (topology-config id servlet-request))
         (json-response (mk-visualization-data id (:window m) (check-include-sys? (:sys m))) (:callback m)))
   (GET "/api/v1/topology/:id/component/:component" [:as {:keys [cookies servlet-request]} id component & m]
        (let [user (.getUserName http-creds-handler servlet-request)]
-         (assert-authorized-user servlet-request "getTopology" (topology-config id))
+         (assert-authorized-user servlet-request "getTopology" (topology-config id servlet-request))
          (json-response (component-page id component (:window m) (check-include-sys? (:sys m)) user) (:callback m))))
   (GET "/api/v1/topology/:id/logconfig" [:as {:keys [cookies servlet-request]} id & m]
-       (assert-authorized-user servlet-request "getTopology" (topology-config id))
+       (assert-authorized-user servlet-request "getTopology" (topology-config id servlet-request))
        (json-response (log-config id) (:callback m)))
   (POST "/api/v1/topology/:id/activate" [:as {:keys [cookies servlet-request]} id & m]
+    (assert-authorized-user servlet-request "activate" (topology-config id servlet-request))
     (thrift/with-configured-nimbus-connection nimbus
-    (assert-authorized-user servlet-request "activate" (topology-config id))
       (let [tplg (->> (doto
                         (GetInfoOptions.)
                         (.set_num_err_choice NumErrorsChoice/NONE))
@@ -1034,8 +1037,8 @@
         (log-message "Activating topology '" name "'")))
     (json-response (topology-op-response id "activate") (m "callback")))
   (POST "/api/v1/topology/:id/deactivate" [:as {:keys [cookies servlet-request]} id & m]
+    (assert-authorized-user servlet-request "deactivate" (topology-config id servlet-request))
     (thrift/with-configured-nimbus-connection nimbus
-    (assert-authorized-user servlet-request "deactivate" (topology-config id))
       (let [tplg (->> (doto
                         (GetInfoOptions.)
                         (.set_num_err_choice NumErrorsChoice/NONE))
@@ -1045,8 +1048,8 @@
         (log-message "Deactivating topology '" name "'")))
     (json-response (topology-op-response id "deactivate") (m "callback")))
   (POST "/api/v1/topology/:id/rebalance/:wait-time" [:as {:keys [cookies servlet-request]} id wait-time & m]
+    (assert-authorized-user servlet-request "rebalance" (topology-config id servlet-request))
     (thrift/with-configured-nimbus-connection nimbus
-    (assert-authorized-user servlet-request "rebalance" (topology-config id))
       (let [tplg (->> (doto
                         (GetInfoOptions.)
                         (.set_num_err_choice NumErrorsChoice/NONE))
@@ -1064,7 +1067,7 @@
         (log-message "Rebalancing topology '" name "' with wait time: " wait-time " secs")))
     (json-response (topology-op-response id "rebalance") (m "callback")))
   (POST "/api/v1/topology/:id/kill/:wait-time" [:as {:keys [cookies servlet-request]} id wait-time & m]
-    (assert-authorized-user servlet-request "killTopology" (topology-config id))
+    (assert-authorized-user servlet-request "killTopology" (topology-config id servlet-request))
     (thrift/with-configured-nimbus-connection nimbus
       (let [tplg (->> (doto
                         (GetInfoOptions.)
@@ -1078,7 +1081,7 @@
     (json-response (topology-op-response id "kill") (m "callback")))
 
   (POST "/api/v1/topology/:id/logconfig" [:as {:keys [cookies servlet-request]} id namedLoggerLevels & m]
-    (assert-authorized-user servlet-request "setLogConfig" (topology-config id))
+    (assert-authorized-user servlet-request "setLogConfig" (topology-config id servlet-request))
     (thrift/with-configured-nimbus-connection
       nimbus
       (let [new-log-config (LogConfig.)]
