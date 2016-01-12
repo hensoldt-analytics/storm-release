@@ -84,15 +84,36 @@ if "%1" == "--service" (
     set CLASSPATH=%CLASSPATH%;%2
     set CLASS=%3
     set args=%4
+    set config-options=
+
     goto start
     :start
     shift
     if [%4] == [] goto done
+
+    if '%4'=='-c' (
+      set c-opt=first
+      goto start
+    )
+
+    if "%c-opt%"=="first" (
+      set config-options=%config-options%,%4
+      set c-opt=second
+      goto start
+    )
+
+    if "%c-opt%"=="second" (
+      set config-options=%config-options%=%4
+      set c-opt=
+      goto start
+    )
+
     set args=%args% %4
     goto start
 
     :done
     set storm-command-arguments=%args%
+    set STORM_OPTS=%STORM_OPTS% -Dstorm.options=%config-options%
   )
 
   if not defined STORM_LOG_FILE (
