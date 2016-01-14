@@ -48,9 +48,14 @@ if "%1" == "--service" (
 :main
   setlocal enabledelayedexpansion
 
+  set storm-command=%1
+
+  if not "%storm-command%" == "jar" (
+    set set_storm_options=true
+  )
+
   call %script_path%storm-config.cmd
 
-  set storm-command=%1
   if not defined storm-command (
       goto print_usage
   )
