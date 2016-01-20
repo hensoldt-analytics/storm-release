@@ -357,7 +357,11 @@ public class Utils {
 
     public static void downloadFromMaster(Map conf, String file, String localFile) throws AuthorizationException, IOException, TException, InterruptedException {
         NimbusClient client = NimbusClient.getConfiguredClient(conf);
+        try {
         download(client, file, localFile);
+        } finally {
+            client.close();
+        }
     }
 
     public static void downloadFromHost(Map conf, String file, String localFile, String host, int port) throws IOException, TException, AuthorizationException, InterruptedException {
@@ -667,4 +671,16 @@ public class Utils {
         }
     }
 
+    /**
+     * A cheap way to deterministically convert a number to a positive value. When the input is
+     * positive, the original value is returned. When the input number is negative, the returned
+     * positive value is the original value bit AND against Integer.MAX_VALUE(0x7fffffff) which
+     * is not its absolutely value.
+     *
+     * @param number a given number
+     * @return a positive number.
+     */
+    public static int toPositive(int number) {
+        return number & Integer.MAX_VALUE;
+    }
 }
