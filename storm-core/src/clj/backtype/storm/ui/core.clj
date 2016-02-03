@@ -290,9 +290,11 @@
     (sort-by #(-> ^ExecutorSummary % .get_executor_info .get_task_start) ret)))
 
 (defn worker-log-link [host port topology-id]
-  (let [fname (logs-filename topology-id port)]
-    (url-format (str "http://%s:%s/log?file=%s")
-          host (*STORM-CONF* LOGVIEWER-PORT) fname)))
+  (if (or (empty? host) (let [port_str (str port "")] (or (empty? port_str) (= "0" port_str))))
+    ""
+    (let [fname (logs-filename topology-id port)]
+      (url-format (str "http://%s:%s/log?file=%s")
+          host (*STORM-CONF* LOGVIEWER-PORT) fname))))
 
 (defn nimbus-log-link [host port]
   (url-format "http://%s:%s/log?file=nimbus.log" host (*STORM-CONF* LOGVIEWER-PORT) port))
