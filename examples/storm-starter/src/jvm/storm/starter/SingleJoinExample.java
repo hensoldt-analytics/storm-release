@@ -58,7 +58,7 @@ public class SingleJoinExample {
       ageSpout.feed(new Values(i, i + 20));
     }
 
-    Utils.sleep(2000);
+    Utils.sleep(20000);
     cluster.shutdown();
   }
 }
