@@ -239,7 +239,7 @@ public class HiveBolt extends  BaseRichBolt {
             try {
                 entry.getValue().abort();
             } catch (Exception e) {
-                LOG.warn("Failed to abort hive transaction batch, HiveEndPoint ", entry.getKey());
+                LOG.error("Failed to abort hive transaction batch, HiveEndPoint " + entry.getValue() +" due to exception ", e);
             }
         }
     }
