@@ -167,7 +167,7 @@ public class TransactionalGlobalCount {
 
     cluster.submitTopology("global-count-topology", config, builder.buildTopology());
 
-    Thread.sleep(3000);
+    Thread.sleep(30000);
     cluster.shutdown();
   }
 }
