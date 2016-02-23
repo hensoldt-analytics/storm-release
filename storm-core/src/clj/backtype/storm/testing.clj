@@ -113,6 +113,13 @@
   (if-not (conf STORM-LOCAL-MODE-ZMQ)
     (msg-loader/mk-local-context)))
 
+(defn is-leadership-election-done [n]
+  (try
+    (some (fn [x] (.is_isLeader x)) (.get_nimbuses (.getClusterInfo n)))
+    (catch Exception e
+      (log-error e "No elected leader nimbus yet.")
+      false)))
+
 ;; returns map containing cluster info
 ;; local dir is always overridden in maps
 ;; can customize the supervisors (except for ports) by passing in map for :supervisors parameter
@@ -266,12 +273,16 @@
   [nimbus storm-name conf topology]
   (when-not (Utils/isValidConf conf)
     (throw (IllegalArgumentException. "Topology conf is not json-serializable")))
+  ;wait upto 10 seconds for nimbus to acquire leadership.
+  (wait-for-condition #(is-leadership-election-done nimbus) 10000)
   (.submitTopology nimbus storm-name nil (to-json conf) topology))
 
 (defn submit-local-topology-with-opts
   [nimbus storm-name conf topology submit-opts]
   (when-not (Utils/isValidConf conf)
     (throw (IllegalArgumentException. "Topology conf is not json-serializable")))
+  ;wait upto 10 seconds for nimbus to acquire leadership.
+  (wait-for-condition #(is-leadership-election-done nimbus) 10000)
   (.submitTopologyWithOpts nimbus storm-name nil (to-json conf) topology submit-opts))
 
 (defn mocked-compute-new-topology->executor->node+port [storm-name executor->node+port]

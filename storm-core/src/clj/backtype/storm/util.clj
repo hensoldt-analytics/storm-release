@@ -634,9 +634,13 @@
          (finally (.unlock wlock#))))))
 
 (defn wait-for-condition
-  [apredicate]
-  (while (not (apredicate))
-    (Time/sleep 100)))
+  ([apredicate]
+    (wait-for-condition apredicate -1))
+  ([apredicate max-wait-time-millis]
+    (let [start-time (System/currentTimeMillis)]
+    (while (and (not (apredicate))
+             (or (> max-wait-time-millis (- (System/currentTimeMillis) start-time)) (= max-wait-time-millis -1)))
+      (Time/sleep 100)))))
 
 (defn time-delta
   [time-secs]
