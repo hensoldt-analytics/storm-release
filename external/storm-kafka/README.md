@@ -81,6 +81,7 @@ The KafkaConfig class also has bunch of public variables that controls your appl
     public int fetchSizeBytes = 1024 * 1024;
     public int socketTimeoutMs = 10000;
     public int fetchMaxWait = 10000;
+    public int fethcMinBytes = 1;
     public int bufferSizeBytes = 1024 * 1024;
     public MultiScheme scheme = new RawMultiScheme();
     public boolean ignoreZkOffsets = false;
