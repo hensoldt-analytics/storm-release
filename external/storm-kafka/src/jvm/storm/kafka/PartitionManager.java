@@ -26,6 +26,7 @@ import backtype.storm.spout.SpoutOutputCollector;
 import com.google.common.collect.ImmutableMap;
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
+import kafka.message.InvalidMessageException;
 import kafka.message.MessageAndOffset;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -180,26 +181,30 @@ public class PartitionManager {
         _fetchAPICallCount.incr();
         if (msgs != null) {
             int numMessages = 0;
-
-            for (MessageAndOffset msg : msgs) {
-                final Long cur_offset = msg.offset();
-                if (cur_offset < offset) {
-                    // Skip any old offsets.
-                    continue;
-                }
-                if (processingNewTuples || this._failedMsgRetryManager.shouldRetryMsg(cur_offset)) {
-                    numMessages += 1;
-                    if (!_pending.containsKey(cur_offset)) {
-                        _pending.put(cur_offset, System.currentTimeMillis());
+            try {
+                for (MessageAndOffset msg : msgs) {
+                    final Long cur_offset = msg.offset();
+                    if (cur_offset < offset) {
+                        // Skip any old offsets.
+                        continue;
                     }
-                    _waitingToEmit.add(new MessageAndRealOffset(msg.message(), cur_offset));
-                    _emittedToOffset = Math.max(msg.nextOffset(), _emittedToOffset);
-                    if (_failedMsgRetryManager.shouldRetryMsg(cur_offset)) {
-                        this._failedMsgRetryManager.retryStarted(cur_offset);
+                    if (processingNewTuples || this._failedMsgRetryManager.shouldRetryMsg(cur_offset)) {
+                        numMessages += 1;
+                        if (!_pending.containsKey(cur_offset)) {
+                            _pending.put(cur_offset, System.currentTimeMillis());
+                        }
+                        _waitingToEmit.add(new MessageAndRealOffset(msg.message(), cur_offset));
+                        _emittedToOffset = Math.max(msg.nextOffset(), _emittedToOffset);
+                        if (_failedMsgRetryManager.shouldRetryMsg(cur_offset)) {
+                            this._failedMsgRetryManager.retryStarted(cur_offset);
+                        }
                     }
                 }
+                _fetchAPIMessageCount.incrBy(numMessages);
+            } catch(InvalidMessageException e) {
+                LOG.error("Got an invalid message when filling messages starting with offset:{} topic:{} partition:{}. " +
+                        "As the message is invalid we will skip and move forward.", offset, _spoutConfig.topic, _partition.partition, e);
             }
-            _fetchAPIMessageCount.incrBy(numMessages);
         }
     }
 

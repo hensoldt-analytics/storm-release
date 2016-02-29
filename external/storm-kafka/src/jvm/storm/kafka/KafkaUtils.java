@@ -153,13 +153,13 @@ public class KafkaUtils {
     }
 
     public static ByteBufferMessageSet fetchMessages(KafkaConfig config, SimpleConsumer consumer, Partition partition, long offset)
-            throws TopicOffsetOutOfRangeException, FailedFetchException,RuntimeException {
+            throws TopicOffsetOutOfRangeException, FailedFetchException {
         ByteBufferMessageSet msgs = null;
         String topic = config.topic;
         int partitionId = partition.partition;
         FetchRequestBuilder builder = new FetchRequestBuilder();
         FetchRequest fetchRequest = builder.addFetch(topic, partitionId, offset, config.fetchSizeBytes).
-                clientId(config.clientId).maxWait(config.fetchMaxWait).build();
+                clientId(config.clientId).maxWait(config.fetchMaxWait).minBytes(config.fethcMinBytes).build();
         FetchResponse fetchResponse;
         try {
             fetchResponse = consumer.fetch(fetchRequest);
