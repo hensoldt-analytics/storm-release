@@ -122,23 +122,24 @@
           (is (thrown-cause? AuthorizationException (.getTopologyInfo nimbus_client "topo-ID"))))
         (.close client)))))
 
-(deftest test-noop-authorization-w-sasl-digest
-  (let [port (available-port)]
-    (with-test-cluster [port
-                  "test/clj/backtype/storm/security/auth/jaas_digest.conf"
-                  "backtype.storm.security.auth.authorizer.NoopAuthorizer"
-                  "backtype.storm.security.auth.digest.DigestSaslTransportPlugin"]
-      (let [storm-conf (merge (read-storm-config)
-                              {STORM-THRIFT-TRANSPORT-PLUGIN "backtype.storm.security.auth.digest.DigestSaslTransportPlugin"
-                               "java.security.auth.login.config" "test/clj/backtype/storm/security/auth/jaas_digest.conf"
-                               Config/NIMBUS_THRIFT_PORT port
-                               STORM-NIMBUS-RETRY-TIMES 0})
-            client (NimbusClient. storm-conf "localhost" port nimbus-timeout)
-            nimbus_client (.getClient client)]
-        (testing "(Positive authorization) Authorization plugin should accept client request"
-                 (is (thrown-cause? NotAliveException
-                              (.activate nimbus_client "topo-name"))))
-        (.close client)))))
+; disable unit test due to intermittent failure: see BUG-53434
+;(deftest test-noop-authorization-w-sasl-digest
+;  (let [port (available-port)]
+;    (with-test-cluster [port
+;                  "test/clj/backtype/storm/security/auth/jaas_digest.conf"
+;                  "backtype.storm.security.auth.authorizer.NoopAuthorizer"
+;                  "backtype.storm.security.auth.digest.DigestSaslTransportPlugin"]
+;      (let [storm-conf (merge (read-storm-config)
+;                              {STORM-THRIFT-TRANSPORT-PLUGIN "backtype.storm.security.auth.digest.DigestSaslTransportPlugin"
+;                               "java.security.auth.login.config" "test/clj/backtype/storm/security/auth/jaas_digest.conf"
+;                               Config/NIMBUS_THRIFT_PORT port
+;                               STORM-NIMBUS-RETRY-TIMES 0})
+;            client (NimbusClient. storm-conf "localhost" port nimbus-timeout)
+;            nimbus_client (.getClient client)]
+;        (testing "(Positive authorization) Authorization plugin should accept client request"
+;                 (is (thrown-cause? NotAliveException
+;                              (.activate nimbus_client "topo-name"))))
+;        (.close client)))))
 
 (deftest test-deny-authorization-w-sasl-digest
   (let [port (available-port)]
