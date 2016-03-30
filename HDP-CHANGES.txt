@@ -1,8 +1,34 @@
 Changes only in Hortonworks github and not in Apache Storm release 0.10.0-beta1 and hence not covered by CHANGELOG.md
 
+Derg-M10:
+* STORM-1096: Fix some issues with impersonation on the UI
+* STORM-1108: Fix NPE in simulated time
+* STORM-1044: Setting dop to zero does not raise an error
+* STORM-1005: Supervisor do not get running workers after restart.
+* STORM-1027: Use overflow buffer for emitting metrics
+* STORM-1024: log4j changes leaving ${sys:storm.log.dir} under STORM_HOME dir
+* STORM-1001: Undefined STORM_EXT_CLASSPATH adds '::' to classpath of workers
+* STORM-977: Incorrect signal (-9) when as-user is true
+* STORM-866: Use storm.log.dir instead of storm.home in log4j2 config
+* STORM-810: PartitionManager in storm-kafka should commit latest offset before close
+* STORM-793: Made change to logviewer.clj in order to remove the invalid http 500 response
+* STORM-139: hashCode does not work for byte[]
+* STORM-966: ConfigValidation.DoubleValidator doesn't really validate whether the type of the object is a double
+* STORM-992: A bug in the timer.clj might cause unexpected delay to schedule new event
+* STORM-584: Fix logging for LoggingMetricsConsumer metrics.log file
+* STORM-1481: avoid Math.abs(Integer) get a negative value
+* STORM-1121: Deprecate test only configuraton nimbus.reassign
+* STORM-1482: add missing 'break' for RedisStoreBolt
+* STORM-837: HdfsState ignores commits
+* STORM-1037: do not remove storm-code in supervisor until kill job
+* STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed
+
+
+Derg-M5:
+
  * STORM-422 Allow more arguments to be passed to storm jar
  * STORM-745: fix storm.cmd to evaluate 'shift' correctly with 'storm jar'
- * STORM-STORM-1476 Filter -c options from args and add them as part of storm.options 
+ * STORM-STORM-1476 Filter -c options from args and add them as part of storm.options
  * STORM-1030: Hive Connector Fixes.
  * STORM-1203. worker metadata file creation doesn't use storm.log.dir config.
  * STORM-1102: Add a default flush interval for HiveBolt.
