@@ -1,6 +1,5 @@
 Changes only in Hortonworks github and not in Apache Storm release 0.10.0-beta1 and hence not covered by CHANGELOG.md
 
-Derg-M10:
 * STORM-1096: Fix some issues with impersonation on the UI
 * STORM-1108: Fix NPE in simulated time
 * STORM-1044: Setting dop to zero does not raise an error
@@ -22,20 +21,3 @@ Derg-M10:
 * STORM-837: HdfsState ignores commits
 * STORM-1037: do not remove storm-code in supervisor until kill job
 * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed
-
-
-Derg-M5:
-
- * STORM-422 Allow more arguments to be passed to storm jar
- * STORM-745: fix storm.cmd to evaluate 'shift' correctly with 'storm jar'
- * STORM-STORM-1476 Filter -c options from args and add them as part of storm.options
- * STORM-1030: Hive Connector Fixes.
- * STORM-1203. worker metadata file creation doesn't use storm.log.dir config.
- * STORM-1102: Add a default flush interval for HiveBolt.
- * STORM-742: Let ShellBolt treat all messages to update heartbeat
- * STORM-139: hashCode does not work for byte[]
- * STORM-1147: Storm JDBCBolt should add validation to ensure either insertQuery or table name is specified and not both.
- * STORM-1017: If ignoreZkOffsets set true,KafkaSpout will reset zk offset when recover from failure.
- * STORM-996: netty-unit-tests/test-batch demonstrates out-of-order delivery
- * STORM-992: A bug in the timer.clj might cause unexpected delay to schedule new event
- * STORM-412: Allow users to modify logging levels of running topologies
