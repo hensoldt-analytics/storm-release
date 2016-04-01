@@ -28,7 +28,8 @@
   (:import [org.yaml.snakeyaml Yaml]
            [org.yaml.snakeyaml.constructor SafeConstructor])
   (:import [backtype.storm.ui InvalidRequestException]
-           [backtype.storm.security.auth AuthUtils])
+           [backtype.storm.security.auth AuthUtils]
+           [backtype.storm.utils Utils])
   (:require [compojure.route :as route]
             [compojure.handler :as handler]
             [ring.middleware.keyword-params]
@@ -56,7 +57,7 @@
 
 (defn select-files-for-cleanup [conf now-millis root-dir]
   (let [file-filter (mk-FileFilter-for-log-cleanup conf now-millis)]
-    (.listFiles (File. root-dir) file-filter)))
+    (Utils/filteredFiles (File. root-dir) file-filter)))
 
 (defn get-metadata-file-for-log-root-name [root-name root-dir]
   (let [metaFile (clojure.java.io/file root-dir "metadata"
