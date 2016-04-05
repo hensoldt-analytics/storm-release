@@ -378,6 +378,8 @@ Note that if anything goes wrong, this will throw an Error and exit."
                             :filter-params {}}])]
       (storm-run-jetty {:port (int (conf LOGVIEWER-PORT))
                         :configurator (fn [server]
+                                        (doseq [connector (.getConnectors server)]
+                                          (.setRequestHeaderSize connector header-buffer-size))
                                         (config-filter server middle filters-confs))}))
   (catch Exception ex
     (log-error ex))))
