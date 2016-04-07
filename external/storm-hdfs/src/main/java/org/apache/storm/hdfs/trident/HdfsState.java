@@ -491,15 +491,22 @@ public class HdfsState implements State {
 
     private void updateIndex(long txId) {
         FSDataOutputStream out = null;
+        TxnRecord txnRecord;
         LOG.debug("Starting index update.");
         try {
             Path tmpPath = tmpFilePath(indexFilePath.toString());
-            out = this.options.fs.create(tmpPath, true);
-            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
-            TxnRecord txnRecord = new TxnRecord(txId, options.currentFile.toString(), this.options.getCurrentOffset());
-            bw.write(txnRecord.toString());
-            bw.newLine();
-            bw.flush();
+            try {
+                out = this.options.fs.create(tmpPath, true);
+                BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
+                txnRecord = new TxnRecord(txId, options.currentFile.toString(), this.options.getCurrentOffset());
+                bw.write(txnRecord.toString());
+                bw.newLine();
+                bw.flush();
+            } finally {
+                if (out != null) {
+                    out.close();
+                }
+            }
             /*
              * Delete the current index file and rename the tmp file to atomically
              * replace the index file. Orphan .tmp files are handled in getTxnRecord.
@@ -511,15 +518,6 @@ public class HdfsState implements State {
         } catch (IOException e) {
             LOG.warn("Begin commit failed due to IOException. Failing batch", e);
             throw new FailedException(e);
-        } finally {
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    LOG.warn("Begin commit failed due to IOException. Failing batch", e);
-                    throw new FailedException(e);
-                }
-            }
         }
     }
 
