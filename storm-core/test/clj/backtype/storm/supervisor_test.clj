@@ -379,7 +379,9 @@
           mock-worker-id "fake-worker-id"
           mock-sensitivity "S3"
           mock-cp "mock-classpath'quote-on-purpose"
-          storm-local (str file-path-separator "tmp" file-path-separator (UUID/randomUUID))
+          storm-local (if on-windows?
+                        (str (System/getProperty "java.io.tmpdir") file-path-separator (UUID/randomUUID))
+                        (str file-path-separator "tmp" file-path-separator (UUID/randomUUID)))
           ; worker-script itself relies on bash, so adding storm-worker-script.sh with / (not using file-path-separator) would not make an issue in production
           worker-script (str storm-local file-path-separator "workers" file-path-separator mock-worker-id "/storm-worker-script.sh")
           exp-launch ["/bin/worker-launcher"
