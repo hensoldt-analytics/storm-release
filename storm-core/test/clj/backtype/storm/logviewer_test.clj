@@ -157,7 +157,7 @@
                     {:owner exp-user :files #{mockfile3 mockyaml}}]
                  supervisor/worker-launcher nil
                  rmr nil]
-        (logviewer/cleanup-fn! "/tmp/")
+        (logviewer/cleanup-once-fn! "/tmp/")
         (verify-call-times-for supervisor/worker-launcher 1)
         (verify-first-call-args-for-indices supervisor/worker-launcher
                                             [1 2] exp-user exp-cmd)
