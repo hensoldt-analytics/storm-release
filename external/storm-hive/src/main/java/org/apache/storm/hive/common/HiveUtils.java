@@ -64,7 +64,8 @@ public class HiveUtils {
             throw new AuthenticationFailed("Host lookup error when resolving principal " + principal, e);
         }
         try {
-            return UserGroupInformation.loginUserFromKeytabAndReturnUGI(principal, keytab);
+            UserGroupInformation.loginUserFromKeytab(principal, keytab);
+            return UserGroupInformation.getLoginUser();
         } catch (IOException e) {
             throw new AuthenticationFailed("Login failed for principal " + principal, e);
         }
