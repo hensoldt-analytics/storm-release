@@ -23,16 +23,14 @@ import storm.trident.tuple.TridentTuple;
 import backtype.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.json.simple.JSONObject;
 
 import org.apache.hive.hcatalog.streaming.HiveEndPoint;
 import org.apache.hive.hcatalog.streaming.RecordWriter;
 import org.apache.hive.hcatalog.streaming.StreamingException;
 import org.apache.hive.hcatalog.streaming.StrictJsonWriter;
 import org.apache.hive.hcatalog.streaming.TransactionBatch;
-import org.apache.hadoop.security.UserGroupInformation;
+import org.json.simple.JSONObject;
 
-import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
@@ -66,18 +64,9 @@ public class JsonRecordHiveMapper implements HiveMapper {
     }
 
     @Override
-    public RecordWriter createRecordWriter(final HiveEndPoint endPoint, final UserGroupInformation ugi)
-        throws StreamingException, IOException, ClassNotFoundException, InterruptedException {
-        if (ugi != null) {
-            return ugi.doAs(new PrivilegedExceptionAction<StrictJsonWriter>() {
-                 @Override
-                 public StrictJsonWriter run() throws Exception {
-                     return new StrictJsonWriter(endPoint);
-                 }
-                });
-        } else {
-            return new StrictJsonWriter(endPoint);
-        }
+    public RecordWriter createRecordWriter(HiveEndPoint endPoint)
+        throws StreamingException, IOException, ClassNotFoundException {
+        return new StrictJsonWriter(endPoint);
     }
 
     @Override
