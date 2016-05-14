@@ -20,7 +20,7 @@
          [string :only [blank? join]]
          [walk :only [keywordize-keys]]])
   (:use [backtype.storm config log])
-  (:use [backtype.storm.util :only [clojurify-structure uuid defnk url-encode]])
+  (:use [backtype.storm.util :only [clojurify-structure uuid defnk url-encode not-nil?]])
   (:use [clj-time coerce format])
   (:import [backtype.storm.generated ExecutorInfo ExecutorSummary])
   (:import [java.util EnumSet])
@@ -146,12 +146,15 @@
                             (.setKeyStoreType ks-type)
                             (.setKeyStorePassword ks-password)
                             (.setKeyManagerPassword key-password))]
-    (if (and (not-nil? ts-path) (not-nil? ts-password) (not-nil? ts-type))
-      ((.setTrustStore sslContextFactory ts-path)
-       (.setTrustStoreType sslContextFactory ts-type)
-       (.setTrustStoreType sslContextFactory ts-password)))
-    (if (need-client-auth) (.setNeedClientAuth sslContextFactory true)
-        (if (want-client-auth) (.setWantClientAuth sslContextFactory true)))
+    (when (and (not-nil? ts-path)
+            (not-nil? ts-password)
+            (not-nil? ts-type))
+      (.setTrustStore sslContextFactory ts-path)
+      (.setTrustStoreType sslContextFactory ts-type)
+      (.setTrustStorePassword sslContextFactory ts-password))
+    (cond
+      need-client-auth (.setNeedClientAuth sslContextFactory true)
+      want-client-auth (.setWantClientAuth sslContextFactory true))
     (doto (SslSocketConnector. sslContextFactory)
       (.setPort port))))
 
