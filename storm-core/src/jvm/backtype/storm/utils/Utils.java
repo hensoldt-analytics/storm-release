@@ -675,34 +675,22 @@ public class Utils {
             throw new IllegalArgumentException("Given dir ["+dir+"] should be a directory.");
         }
 
-        final Iterator<Path> pathIterator = Files.newDirectoryStream(dir.toPath(), new DirectoryStream.Filter<Path>() {
-            @Override
-            public boolean accept(Path entry) throws IOException {
-                return fileFilter.accept(entry.toFile());
+        List<File> files = new ArrayList<>();
+        final int MAX_NUM = 1024;
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir.toPath())) {
+            for (Path path : stream) {
+                final File file = path.toFile();
+                if(fileFilter.accept(file)) {
+                    files.add(file);
+                    if (files.size() >= MAX_NUM) {
+                        break;
+                    }
+                }
             }
-        }).iterator();
+        }
 
-        return new Iterable<File>() {
-            @Override
-            public Iterator<File> iterator() {
-                return new Iterator<File>() {
-                    @Override
-                    public boolean hasNext() {
-                        return pathIterator.hasNext();
-                    }
-
-                    @Override
-                    public File next() {
-                        return pathIterator.next().toFile();
-                    }
-
-                    @Override
-                    public void remove() {
-                        pathIterator.remove();
-                    }
-                };
-            }
-        };
+        return files;
     }
 
 }

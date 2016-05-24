@@ -122,29 +122,40 @@
         {:owner owner
          :files files}))))
 
-(defn cleanup-fn! [log-root-dir]
+(defn cleanup-once-fn! [log-root-dir]
   (let [now-secs (current-time-secs)
         old-log-files (select-files-for-cleanup *STORM-CONF* (* now-secs 1000) log-root-dir)
         dead-worker-files (get-dead-worker-files-and-owners *STORM-CONF* now-secs old-log-files log-root-dir)]
-    (log-debug "log cleanup: now=" now-secs
-               " old log files " (pr-str (map #(.getName %) old-log-files))
-               " dead worker files " (->> dead-worker-files
-                                          (mapcat (fn [{l :files}] l))
-                                          (map #(.getName %))
-                                          (pr-str)))
-    (dofor [{:keys [owner files]} dead-worker-files
-            file files]
-      (let [path (.getCanonicalPath file)]
-        (log-message "Cleaning up: Removing " path)
-        (try
-          (if (or (blank? owner) (re-matches #".*\.yaml$" path))
-            (rmr path)
-            ;; worker-launcher does not actually launch a worker process.  It
-            ;; merely executes one of a prescribed set of commands.  In this case, we ask it
-            ;; to delete a file as the owner of that file.
-            (supervisor/worker-launcher *STORM-CONF* owner (str "rmr " path)))
-          (catch Exception ex
-            (log-error ex)))))))
+    (log-message "log cleanup: now=" now-secs
+      " old log files " (pr-str (map #(.getName %) old-log-files))
+      " dead worker files " (->> dead-worker-files
+                              (mapcat (fn [{l :files}] l))
+                              (map #(.getName %))
+                              (pr-str)))
+    (log-message "received dead-worker-files: " dead-worker-files)
+
+    (if (empty? dead-worker-files)
+      false
+      (do
+        (dofor [{:keys [owner files]} dead-worker-files
+              file files]
+        (let [path (.getCanonicalPath file)]
+          (log-message "Cleaning up: Removing " path)
+          (try
+            (if (or (blank? owner) (re-matches #".*\.yaml$" path))
+              (rmr path)
+              ;; worker-launcher does not actually launch a worker process.  It
+              ;; merely executes one of a prescribed set of commands.  In this case, we ask it
+              ;; to delete a file as the owner of that file.
+              (supervisor/worker-launcher *STORM-CONF* owner (str "rmr " path)))
+            (catch Exception ex
+              (log-error ex))
+            )))
+        true))))
+
+(defn cleanup-fn! [log-root-dir]
+    (while (cleanup-once-fn! log-root-dir)
+      (log-message "log cleanup: Continue running for cleaning up more files")))
 
 (defn start-log-cleaner! [conf log-root-dir]
   (let [interval-secs (conf LOGVIEWER-CLEANUP-INTERVAL-SECS)]
