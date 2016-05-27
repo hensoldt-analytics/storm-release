@@ -147,6 +147,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
             boolean forceSync = false;
             if (TupleUtils.isTick(tuple)) {
                 LOG.debug("TICK! forcing a file system flush");
+                this.collector.ack(tuple);
                 forceSync = true;
             } else {
                 try {
@@ -232,11 +233,14 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     }
 
     /**
-     * writes a tuple to the underlying filesystem but makes no guarantees about syncing data
+     * writes a tuple to the underlying filesystem but makes no guarantees about syncing data.
+     *
+     * this.offset is also updated to reflect additional data written
+     *
      * @param tuple
      * @throws IOException
      */
-    abstract void writeTuple(Tuple tuple) throws IOException;
+    abstract protected void writeTuple(Tuple tuple) throws IOException;
 
     /**
      * Make the best effort to sync written data to the underlying file system.  Concrete classes should very clearly
@@ -245,12 +249,13 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
      *
      * @throws IOException
      */
-    abstract void syncTuples() throws IOException;
+    abstract protected void syncTuples() throws IOException;
 
-    abstract void closeOutputFile() throws IOException;
+    abstract protected void closeOutputFile() throws IOException;
 
-    abstract Path createOutputFile() throws IOException;
+    abstract protected Path createOutputFile() throws IOException;
 
-    abstract void doPrepare(Map conf, TopologyContext topologyContext, OutputCollector collector) throws IOException;
+    abstract protected void doPrepare(Map conf, TopologyContext topologyContext, OutputCollector collector) throws IOException;
 
 }
+
