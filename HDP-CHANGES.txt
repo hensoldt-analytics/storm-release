@@ -21,3 +21,5 @@ Changes only in Hortonworks github and not in Apache Storm release 0.10.0-beta1 
 * STORM-837: HdfsState ignores commits
 * STORM-1037: do not remove storm-code in supervisor until kill job
 * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed
+* STORM-1689: set request headersize for logviewer
+* STORM-969: HDFS Bolt can end up in an unrecoverable state
