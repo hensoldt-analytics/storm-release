@@ -81,6 +81,7 @@ public class HiveBolt extends  BaseRichBolt {
             if (kerberosEnabled) {
                 try {
                     ugi = HiveUtils.authenticate(options.getKerberosKeytab(), options.getKerberosPrincipal());
+                    HiveUtils.spawnReLoginThread(ugi);
                 } catch(HiveUtils.AuthenticationFailed ex) {
                     LOG.error("Hive Kerberos authentication failed " + ex.getMessage(), ex);
                     throw new IllegalArgumentException(ex);
@@ -174,6 +175,7 @@ public class HiveBolt extends  BaseRichBolt {
         }
 
         callTimeoutPool = null;
+        HiveUtils.killReLoginThread(ugi);
         super.cleanup();
         LOG.info("Hive Bolt stopped");
     }
