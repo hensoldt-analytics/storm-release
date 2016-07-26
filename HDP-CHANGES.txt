@@ -23,3 +23,4 @@ Changes only in Hortonworks github and not in Apache Storm release 0.10.0-beta1 
 * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed
 * STORM-1689: set request headersize for logviewer
 * STORM-969: HDFS Bolt can end up in an unrecoverable state
+* STORM-1989: X-Frame-Options support for Storm UI
