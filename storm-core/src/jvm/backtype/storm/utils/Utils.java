@@ -361,7 +361,7 @@ public class Utils {
     public static void downloadFromMaster(Map conf, String file, String localFile) throws AuthorizationException, IOException, TException, InterruptedException {
         NimbusClient client = NimbusClient.getConfiguredClient(conf);
         try {
-        download(client, file, localFile);
+            download(client, file, localFile);
         } finally {
             client.close();
         }
@@ -372,23 +372,18 @@ public class Utils {
         download(client, file, localFile);
     }
 
-    private static void download(NimbusClient client, String file, String localFile) throws IOException, TException, AuthorizationException, InterruptedException {
-        String id = client.getClient().beginFileDownload(file);
+    private static void download(NimbusClient client, String file, String localFile) throws IOException, TException, AuthorizationException {
         WritableByteChannel out = Channels.newChannel(new FileOutputStream(localFile));
-
-        while(true) {
-            int sleepMillis = 50 + randomGenerator.nextInt(100);
-            try {
+        try {
+            String id = client.getClient().beginFileDownload(file);
+            while(true) {
                 ByteBuffer chunk = client.getClient().downloadChunk(id);
                 int written = out.write(chunk);
-                Thread.sleep(sleepMillis);
-                if (written == 0) break;
-            } catch (ThrottlingException e) {
-                LOG.warn("Nimbus is busy will sleep for  " + sleepMillis + " and retry.", e);
-                Thread.sleep(sleepMillis);
+                if(written==0) break;
             }
+        } finally {
+            out.close();
         }
-        out.close();
     }
 
     public static IFn loadClojureFn(String namespace, String name) {
