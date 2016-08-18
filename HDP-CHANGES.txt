@@ -23,4 +23,7 @@ Changes only in Hortonworks github and not in Apache Storm release 0.10.0-beta1 
 * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed
 * STORM-1689: set request headersize for logviewer
 * STORM-969: HDFS Bolt can end up in an unrecoverable state
+* STORM-721: Storm UI server should support SSL
+* STORM-1968: Storm logviewer does not work for nimbus.log in secure cluster
 * STORM-1989: X-Frame-Options support for Storm UI
+* STORM-994: Close download clients and channels to avoid resource leaks
