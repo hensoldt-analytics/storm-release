@@ -359,20 +359,14 @@ public class Utils {
     }
 
     public static void downloadFromMaster(Map conf, String file, String localFile) throws AuthorizationException, IOException, TException, InterruptedException {
-        NimbusClient client = NimbusClient.getConfiguredClient(conf);
-        try {
+        try (NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
         	download(client, file, localFile);
-        } finally {
-        	client.close();
         }
     }
 
     public static void downloadFromHost(Map conf, String file, String localFile, String host, int port) throws IOException, TException, AuthorizationException, InterruptedException {
-        NimbusClient client = new NimbusClient (conf, host, port, null);
-        try {
+        try (NimbusClient client = new NimbusClient (conf, host, port, null)) {
         	download(client, file, localFile);
-        } finally {
-        	client.close();
         }
     }
 
