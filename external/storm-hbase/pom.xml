@@ -15,13 +15,13 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>0.10.0-SNAPSHOT</version>
+        <version>0.10.0.2.4.4.0-10</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -36,8 +36,8 @@
     </developers>
 
     <properties>
-        <hbase.version>0.98.4-hadoop2</hbase.version>
-        <hdfs.version>${hadoop.version}</hdfs.version>
+        <hbase.version>1.1.2.2.4.4.0-10</hbase.version>
+        <hdfs.version>2.7.1.2.4.4.0-10</hdfs.version>
     </properties>
 
     <dependencies>
