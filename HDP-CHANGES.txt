@@ -21,3 +21,4 @@ Changes only in Hortonworks github and not in Apache Storm release 0.10.0-beta1 
 * STORM-837: HdfsState ignores commits
 * STORM-1037: do not remove storm-code in supervisor until kill job
 * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed
+* STORM-2042: Nimbus client connections not closed properly causing connection leaks
