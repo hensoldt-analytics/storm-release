@@ -468,7 +468,7 @@ def healthcheck(*args):
     Run health checks on the local supervisor.
     """
     exec_storm_class(
-        "org.apache.storm.command.healthcheck",
+        "org.apache.storm.command.HealthCheck",
         args=args,
         jvmtype="",
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
@@ -481,7 +481,7 @@ def kill_workers(*args):
     to have admin rights on the node to be able to successfully kill all workers.
     """
     exec_storm_class(
-        "org.apache.storm.command.kill_workers",
+        "org.apache.storm.command.KillWorkers",
         args=args,
         jvmtype="",
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
@@ -565,7 +565,7 @@ def pacemaker(klass="org.apache.storm.pacemaker.pacemaker"):
         extrajars=cppaths,
         jvmopts=jvmopts)
 
-def supervisor(klass="org.apache.storm.daemon.supervisor"):
+def supervisor(klass="org.apache.storm.daemon.supervisor.Supervisor"):
     """Syntax: [storm supervisor]
 
     Launches the supervisor daemon. This command should be run
