@@ -139,7 +139,7 @@ def get_classpath(extrajars, daemon=True):
 def confvalue(name, extrapaths, daemon=True):
     global CONFFILE
     command = [
-        JAVA_CMD, "-client", get_config_opts(), "-Dstorm.conf.file=" + CONFFILE,
+        JAVA_CMD, get_config_opts(), "-Dstorm.conf.file=" + CONFFILE,
         "-cp", get_classpath(extrapaths, daemon), "org.apache.storm.command.config_value", name
     ]
     p = sub.Popen(command, stdout=sub.PIPE)
@@ -198,9 +198,10 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
     storm_log_dir = confvalue("storm.log.dir",[CLUSTER_CONF_DIR])
     if(storm_log_dir == None or storm_log_dir == "nil"):
         storm_log_dir = os.path.join(STORM_DIR, "logs")
-    all_args = [
-        JAVA_CMD, jvmtype,
-        "-Ddaemon.name=" + daemonName,
+    all_args = [ JAVA_CMD ]
+    if jvmtype:
+        all_args += [jvmtype]
+    all_args += ["-Ddaemon.name=" + daemonName,
         get_config_opts(),
         "-Dstorm.home=" + STORM_DIR,
         "-Dstorm.log.dir=" + storm_log_dir,
@@ -239,7 +240,7 @@ def jar(jarfile, klass, *args):
         exec_storm_class("org.apache.storm.daemon.ClientJarTransformerRunner", args=[transform_class, jarfile, tmpjar], fork=True, daemon=False)
         topology_runner_exit_code = exec_storm_class(
                 klass,
-                jvmtype="-client",
+                jvmtype="",
                 extrajars=[tmpjar, USER_CONF_DIR, STORM_BIN_DIR],
                 args=args,
                 daemon=False,
@@ -250,7 +251,7 @@ def jar(jarfile, klass, *args):
     else:
         exec_storm_class(
             klass,
-            jvmtype="-client",
+            jvmtype="",
             extrajars=[jarfile, USER_CONF_DIR, STORM_BIN_DIR],
             args=args,
             daemon=False,
@@ -266,7 +267,7 @@ def sql(sql_file, topology_name):
     extrajars.extend(get_jars_full(STORM_DIR + "/external/sql/storm-sql-runtime"))
     exec_storm_class(
         "org.apache.storm.sql.StormSqlRunner",
-        jvmtype="-client",
+        jvmtype="",
         extrajars=extrajars,
         args=[sql_file, topology_name],
         daemon=False)
@@ -287,7 +288,7 @@ def kill(*args):
     exec_storm_class(
         "org.apache.storm.command.kill_topology",
         args=args,
-        jvmtype="-client",
+        jvmtype="",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 
@@ -302,7 +303,7 @@ def upload_credentials(*args):
     exec_storm_class(
         "org.apache.storm.command.upload_credentials",
         args=args,
-        jvmtype="-client",
+        jvmtype="",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 def blobstore(*args):
@@ -328,7 +329,7 @@ def blobstore(*args):
     exec_storm_class(
         "org.apache.storm.command.blobstore",
         args=args,
-        jvmtype="-client",
+        jvmtype="",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 def heartbeats(*args):
@@ -340,7 +341,7 @@ def heartbeats(*args):
     exec_storm_class(
         "org.apache.storm.command.heartbeats",
         args=args,
-        jvmtype="-client",
+        jvmtype="",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 def activate(*args):
@@ -354,7 +355,7 @@ def activate(*args):
     exec_storm_class(
         "org.apache.storm.command.activate",
         args=args,
-        jvmtype="-client",
+        jvmtype="",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 def set_log_level(*args):
@@ -387,7 +388,7 @@ def set_log_level(*args):
     exec_storm_class(
         "org.apache.storm.command.set_log_level",
         args=args,
-        jvmtype="-client",
+        jvmtype="",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 def listtopos(*args):
@@ -398,7 +399,7 @@ def listtopos(*args):
     exec_storm_class(
         "org.apache.storm.command.list",
         args=args,
-        jvmtype="-client",
+        jvmtype="",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 def deactivate(*args):
@@ -412,7 +413,7 @@ def deactivate(*args):
     exec_storm_class(
         "org.apache.storm.command.deactivate",
         args=args,
-        jvmtype="-client",
+        jvmtype="",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 def rebalance(*args):
@@ -442,7 +443,7 @@ def rebalance(*args):
     exec_storm_class(
         "org.apache.storm.command.rebalance",
         args=args,
-        jvmtype="-client",
+        jvmtype="",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 def get_errors(*args):
@@ -458,7 +459,7 @@ def get_errors(*args):
     exec_storm_class(
         "org.apache.storm.command.get_errors",
         args=args,
-        jvmtype="-client",
+        jvmtype="",
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
 
 def healthcheck(*args):
@@ -469,7 +470,7 @@ def healthcheck(*args):
     exec_storm_class(
         "org.apache.storm.command.healthcheck",
         args=args,
-        jvmtype="-client",
+        jvmtype="",
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
 
 def kill_workers(*args):
@@ -482,7 +483,7 @@ def kill_workers(*args):
     exec_storm_class(
         "org.apache.storm.command.kill_workers",
         args=args,
-        jvmtype="-client",
+        jvmtype="",
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
 
 def shell(resourcesdir, command, *args):
@@ -498,7 +499,7 @@ def shell(resourcesdir, command, *args):
     exec_storm_class(
         "org.apache.storm.command.shell_submission",
         args=runnerargs,
-        jvmtype="-client",
+        jvmtype="",
         extrajars=[USER_CONF_DIR],
         fork=True)
     os.system("rm " + tmpjarpath)
@@ -510,7 +511,7 @@ def repl():
     on the classpath. Useful for debugging.
     """
     cppaths = [CLUSTER_CONF_DIR]
-    exec_storm_class("clojure.main", jvmtype="-client", extrajars=cppaths)
+    exec_storm_class("clojure.main", jvmtype="", extrajars=cppaths)
 
 def get_log4j2_conf_dir():
     cppaths = [CLUSTER_CONF_DIR]
@@ -675,7 +676,7 @@ def version():
   cppaths = [CLUSTER_CONF_DIR]
   exec_storm_class(
        "org.apache.storm.utils.VersionInfo",
-       jvmtype="-client",
+       jvmtype="",
        extrajars=[CLUSTER_CONF_DIR])
 
 def print_classpath():
@@ -699,7 +700,7 @@ def monitor(*args):
     exec_storm_class(
         "org.apache.storm.command.monitor",
         args=args,
-        jvmtype="-client",
+        jvmtype="",
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 
