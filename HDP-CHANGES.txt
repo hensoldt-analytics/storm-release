@@ -23,3 +23,4 @@ Changes only in Hortonworks github and not in Apache Storm release 0.10.0-beta1 
 * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed
 * STORM-994: Close download clients and channels to avoid resource leaks
 * STORM-2042: Nimbus client connections not closed properly causing connection leaks
+* STORM-2197: Fix for NimbusClient connectins leak due to ThriftClient connection's leakage in case of errors.
