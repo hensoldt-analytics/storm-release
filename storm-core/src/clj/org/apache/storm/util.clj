@@ -907,7 +907,7 @@
 
 (defn partition-fixed
   [max-num-chunks aseq]
-  (if (zero? max-num-chunks)
+  (if (or (nil? aseq) (nil? max-num-chunks) (zero? max-num-chunks))
     []
     (let [chunks (->> (integer-divided (count aseq) max-num-chunks)
                       (#(dissoc % 0))
