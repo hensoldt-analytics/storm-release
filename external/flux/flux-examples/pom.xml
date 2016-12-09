@@ -67,6 +67,10 @@
                     <groupId>javax.servlet</groupId>
                     <artifactId>javax.servlet-api</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache</groupId>
+                    <artifactId>hadoop-aws</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
