@@ -365,8 +365,9 @@ public class Utils {
     }
 
     public static void downloadFromHost(Map conf, String file, String localFile, String host, int port) throws IOException, TException, AuthorizationException, InterruptedException {
-        NimbusClient client = new NimbusClient (conf, host, port, null);
-        download(client, file, localFile);
+        try(NimbusClient client = new NimbusClient (conf, host, port, null)) {
+            download(client, file, localFile);
+        }
     }
 
     private static void download(NimbusClient client, String file, String localFile) throws IOException, TException, AuthorizationException {
