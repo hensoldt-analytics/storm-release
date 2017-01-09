@@ -12,3 +12,4 @@ Changes only in Hortonworks github and not in Apache Storm release 0.10.0-beta1 
  * STORM-727: Storm tests should succeed even if a storm process is running locally.
  * Storm kafka security changes
  * STORM-166: Highly Available Nimbus
+* STORM-740: Simple Transport Client cannot configure thrift buffer size
