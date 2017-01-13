@@ -209,7 +209,7 @@
 
       (when (<= @interval-errors max-per-interval)
         (.report-error (:storm-cluster-state executor) (:storm-id executor) (:component-id executor)
-                              (hostname storm-conf)
+                              (hostname)
                               (.getThisWorkerPort ^WorkerTopologyContext (:worker-context executor)) error)
         ))))
 
@@ -334,7 +334,7 @@
          task-id (:task-id task-data)
          name->imetric (-> interval->task->metric-registry (get interval) (get task-id))
          task-info (IMetricsConsumer$TaskInfo.
-                     (hostname (:storm-conf executor-data))
+                     (hostname)
                      (.getThisWorkerPort worker-context)
                      (:component-id executor-data)
                      task-id
