@@ -109,6 +109,24 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class Utils {
+
+    // A singleton instance allows us to mock delegated static methods in our
+    // tests by subclassing.
+    private static Utils _instance = new Utils();
+
+    /**
+     * Provide an instance of this class for delegates to use.  To mock out
+     * delegated methods, provide an instance of a subclass that overrides the
+     * implementation of the delegated method.
+     * @param u a Utils instance
+     * @return the previously set instance
+     */
+    public static Utils setInstance(Utils u) {
+        Utils oldInstance = _instance;
+        _instance = u;
+        return oldInstance;
+    }
+
     private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
     public static final String DEFAULT_STREAM_ID = "default";
     public static final String DEFAULT_BLOB_VERSION_SUFFIX = ".version";
@@ -119,9 +137,10 @@ public class Utils {
 
     private static SerializationDelegate serializationDelegate;
     private static ClassLoader cl = null;
+    private static Map conf;
 
     static {
-        Map conf = readStormConfig();
+        conf = readStormConfig();
         serializationDelegate = getSerializationDelegate(conf);
     }
 
@@ -1416,6 +1435,36 @@ public class Utils {
 
     public static String localHostname() throws UnknownHostException {
         return InetAddress.getLocalHost().getCanonicalHostName();
+    }
+
+    /**
+     * Gets the storm.local.hostname value, or tries to figure out the local hostname
+     * if it is not set in the config.
+     * @return a string representation of the hostname.
+     */
+    public static String hostname() throws UnknownHostException {
+        return _instance.hostnameImpl();
+    }
+
+    private static String memoizedLocalHostnameString = null;
+
+    public static String memoizedLocalHostname () throws UnknownHostException {
+        if (memoizedLocalHostnameString == null) {
+            memoizedLocalHostnameString = localHostname();
+        }
+        return memoizedLocalHostnameString;
+    }
+
+    // Non-static impl methods exist for mocking purposes.
+    protected String hostnameImpl () throws UnknownHostException  {
+        if (conf == null) {
+            return memoizedLocalHostname();
+        }
+        Object hostnameString = conf.get(Config.STORM_LOCAL_HOSTNAME);
+        if (hostnameString == null || hostnameString.equals("")) {
+            return memoizedLocalHostname();
+        }
+        return (String)hostnameString;
     }
 }
 
