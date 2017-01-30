@@ -15,6 +15,7 @@
 ;; limitations under the License.
 (ns org.apache.storm.daemon.supervisor
   (:import [java.io File IOException FileOutputStream])
+  (:import [java.nio.file Paths])
   (:import [org.apache.storm.scheduler ISupervisor]
            [org.apache.storm.utils LocalState Time Utils]
            [org.apache.storm.daemon Shutdownable]
@@ -1016,10 +1017,13 @@
         workerroot (worker-root conf worker-id)
         blobstore-map (storm-conf TOPOLOGY-BLOBSTORE-MAP)
         blob-file-names (get-blob-file-names blobstore-map)
-        resource-file-names (cons RESOURCES-SUBDIR blob-file-names)]
+        resource-file-names (cons RESOURCES-SUBDIR blob-file-names)
+        resources-dir (str stormroot file-path-separator RESOURCES-SUBDIR)]
     (log-message "Creating symlinks for worker-id: " worker-id " storm-id: "
       storm-id " for files(" (count resource-file-names) "): " (pr-str resource-file-names))
-    (create-symlink! workerroot stormroot RESOURCES-SUBDIR)
+    (if (exists-file? resources-dir)
+      (create-symlink! workerroot stormroot RESOURCES-SUBDIR)
+      (log-message "Topology jar does not contain resources directory"))
     (doseq [file-name blob-file-names]
       (create-symlink! workerroot stormroot file-name file-name))))
 
