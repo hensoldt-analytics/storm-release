@@ -58,3 +58,4 @@ Changes only in Hortonworks github and not in Apache Storm release 1.0.2
  * STORM-2350: Storm-HDFS's listFilesByModificationTime is broken
  * STORM-2338: Subprocess exception handling is broken in storm.py on Windows environment
  * STORM-2266: Close NimbusClient instances appropriately
+ * STORM-2360: Storm-Hive: Thrift version mismatch with storm-core
