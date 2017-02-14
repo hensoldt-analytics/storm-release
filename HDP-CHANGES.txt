@@ -11,3 +11,4 @@ Changes only in Hortonworks github and not in Apache Storm release 0.10.0-beta1 
  * STORM-992: A bug in the timer.clj might cause unexpected delay to schedule new event
  * STORM-412: Allow users to modify logging levels of running topologies
  * STORM-2042: Nimbus client connections not closed properly causing connection leaks
+ * STORM-2197: Fix for NimbusClient connectins leak due to ThriftClient connection's leakage in case of errors.

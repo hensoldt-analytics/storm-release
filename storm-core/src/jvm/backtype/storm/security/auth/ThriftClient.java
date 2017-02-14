@@ -77,9 +77,10 @@ public class ThriftClient implements AutoCloseable {
     }
     
     public synchronized void reconnect() {
-        close();    
+        close();
+        TSocket socket = null;
         try {
-            TSocket socket = new TSocket(_host, _port);
+            socket = new TSocket(_host, _port);
             if(_timeout!=null) {
                 socket.setTimeout(_timeout);
             }
@@ -101,7 +102,13 @@ public class ThriftClient implements AutoCloseable {
                                       Utils.getInt(_conf.get(Config.STORM_NIMBUS_RETRY_INTERVAL)),
                                       Utils.getInt(_conf.get(Config.STORM_NIMBUS_RETRY_INTERVAL_CEILING)));
             _transport = connectionRetry.doConnectWithRetry(transportPlugin, underlyingTransport, _host, _asUser);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
+            // close the socket, which releases connection if it has created any.
+            if(socket != null) {
+                try {
+                    socket.close();
+                } catch (Exception e) {}
+            }
             throw new RuntimeException(ex);
         }
         _protocol = null;
