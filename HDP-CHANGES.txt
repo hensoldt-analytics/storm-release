@@ -54,3 +54,4 @@ Changes only in Hortonworks github and not in Apache Storm release 1.0.2
  * STORM-1720: Support GEO in storm-redis
  * STORM-2158: Fix OutOfMemoryError in Nimbus' SimpleTransportPlugin
  * STORM-2321: Handle blobstore zk key deletion in KeySequenceNumber
+ * STORM-2335: Fix broken Topology visualization with empty ':transferred' in executor stats
