@@ -27,3 +27,4 @@ Changes only in Hortonworks github and not in Apache Storm release 0.10.0-beta1 
 * STORM-1968: Storm logviewer does not work for nimbus.log in secure cluster
 * STORM-1989: X-Frame-Options support for Storm UI
 * STORM-994: Close download clients and channels to avoid resource leaks
+* STORM-1106. Netty Client Connection Attempts should not be limited
