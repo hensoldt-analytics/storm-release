@@ -124,12 +124,10 @@ public class StormSubmitter {
                 LOG.info("Pushing Credentials to topology " + name + " in local mode");
                 localNimbus.uploadNewCredentials(name, new Credentials(fullCreds));
             } else {
-                NimbusClient client = NimbusClient.getConfiguredClient(conf);
-                try {
-                    LOG.info("Uploading new credentials to " +  name);
+
+                try(NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
+                    LOG.info("Uploading new credentials to {}", name);
                     client.getClient().uploadNewCredentials(name, new Credentials(fullCreds));
-                } finally {
-                    client.close();
                 }
             }
             LOG.info("Finished submitting topology: " +  name);
