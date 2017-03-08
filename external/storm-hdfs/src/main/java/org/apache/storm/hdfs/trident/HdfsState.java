@@ -29,6 +29,7 @@ import org.apache.hadoop.hdfs.client.HdfsDataOutputStream;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.storm.hdfs.common.rotation.RotationAction;
 import org.apache.storm.hdfs.common.security.HdfsSecurityUtil;
 import org.apache.storm.hdfs.trident.format.FileNameFormat;
@@ -132,6 +133,7 @@ public class HdfsState implements State {
             }
             try {
                 HdfsSecurityUtil.login(conf, hdfsConfig);
+                HdfsSecurityUtil.spawnReLoginThread(UserGroupInformation.getLoginUser());
                 doPrepare(conf, partitionIndex, numPartitions);
                 this.currentFile = createOutputFile();
 
