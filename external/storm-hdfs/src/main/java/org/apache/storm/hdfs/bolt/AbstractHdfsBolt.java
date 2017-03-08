@@ -28,6 +28,7 @@ import backtype.storm.utils.Utils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.storm.hdfs.bolt.format.FileNameFormat;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.TimedRotationPolicy;
@@ -117,6 +118,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
         try{
             HdfsSecurityUtil.login(conf, hdfsConfig);
+            HdfsSecurityUtil.spawnReLoginThread(UserGroupInformation.getLoginUser());
             doPrepare(conf, topologyContext, collector);
             this.currentFile = createOutputFile();
 
@@ -226,6 +228,16 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         }
 
         return conf;
+    }
+
+    @Override
+    public void cleanup() {
+        try {
+            HdfsSecurityUtil.killReLoginThread(UserGroupInformation.getLoginUser());
+        } catch (IOException e) {
+            LOG.warn("Failed to obtain login user on cleanup");
+        }
+        super.cleanup();
     }
 
     @Override

@@ -26,9 +26,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static backtype.storm.Config.TOPOLOGY_AUTO_CREDENTIALS;
 
@@ -37,6 +42,9 @@ import static backtype.storm.Config.TOPOLOGY_AUTO_CREDENTIALS;
  * with secured HDFS.
  */
 public class HdfsSecurityUtil {
+    private static final long KRB_RELOGIN_INTERVAL_MS = 5 * 60 * 1000; // 5 mins
+    private static Map<UserGroupInformation, ExecutorService> renewThreads = new HashMap<>();
+
     public static final String STORM_KEYTAB_FILE_KEY = "hdfs.keytab.file";
     public static final String STORM_USER_NAME_KEY = "hdfs.kerberos.principal";
 
@@ -61,8 +69,54 @@ public class HdfsSecurityUtil {
                         hdfsConfig.set(STORM_USER_NAME_KEY, userName);
                     }
                     SecurityUtil.login(hdfsConfig, STORM_KEYTAB_FILE_KEY, STORM_USER_NAME_KEY);
+                    // spawn a thread to periodically re-login in secure mode
+                    spawnReLoginThread(UserGroupInformation.getLoginUser());
                 }
             }
+        }
+    }
+
+
+    public synchronized static void spawnReLoginThread(final UserGroupInformation ugi) {
+        if (!renewThreads.containsKey(ugi)) {
+            Runnable task = new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        LOG.debug("HdfsUtils invoking re-login from keytab for ugi {}", ugi);
+                        ugi.checkTGTAndReloginFromKeytab();
+                    } catch (Throwable th) {
+                        LOG.error("Got error while trying to relogin from keytab", th);
+                    }
+                }
+            };
+
+            LOG.debug("Adding re-login task for ugi {}", ugi);
+            ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+            executorService.scheduleAtFixedRate(task, KRB_RELOGIN_INTERVAL_MS, KRB_RELOGIN_INTERVAL_MS, TimeUnit.MILLISECONDS);
+            renewThreads.put(ugi, executorService);
+        }
+    }
+
+    public synchronized static void killReLoginThread(final UserGroupInformation ugi) {
+        LOG.debug("Killing re-login task for ugi {}", ugi);
+        if (renewThreads.containsKey(ugi)) {
+            doKillReLoginThread(renewThreads.get(ugi));
+            renewThreads.remove(ugi);
+        } else {
+            LOG.warn("No re-login thread is running for ugi {}", ugi);
+        }
+    }
+
+    private static void doKillReLoginThread(ExecutorService executorService) {
+        executorService.shutdown();
+        try {
+            if (!executorService.awaitTermination(2, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException ie) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
         }
     }
 }
