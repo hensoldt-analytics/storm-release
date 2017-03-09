@@ -362,7 +362,7 @@
         ;; match.
         exp-offset-fn #(- (/ logviewer/default-bytes-per-page 2) %)]
 
-    (stubbing [hostname expected-host
+    (stubbing [local-hostname expected-host
                logviewer/logviewer-port expected-port]
 
       (testing "Logviewer link centers the match in the page"
