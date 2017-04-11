@@ -34,6 +34,7 @@ import org.apache.storm.Config;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.storm.hdfs.common.HdfsUtils;
 import org.apache.storm.hdfs.common.security.HdfsSecurityUtil;
 import org.slf4j.Logger;
@@ -400,6 +401,7 @@ public class HdfsSpout extends BaseRichSpout {
           }
           try {
             HdfsSecurityUtil.login(conf, hdfsConfig);
+            HdfsSecurityUtil.spawnReLoginThread(UserGroupInformation.getLoginUser());
           } catch (IOException e) {
             LOG.error("HDFS Login failed ", e);
             throw new RuntimeException(e);
@@ -581,6 +583,16 @@ public class HdfsSpout extends BaseRichSpout {
       HdfsUtils.Pair<MessageId, List<Object>> item = HdfsUtils.Pair.of(msgId, inflight.remove(msgId));
       retryList.add(item);
     }
+  }
+
+  @Override
+  public void close() {
+    try {
+      HdfsSecurityUtil.killReLoginThread(UserGroupInformation.getLoginUser());
+    } catch (IOException e) {
+      LOG.warn("Failed to obtain login user on cleanup");
+    }
+    super.close();
   }
 
   private FileReader pickNextFile() {
