@@ -22,37 +22,34 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import junit.framework.Assert;
 import org.apache.hadoop.hive.cli.CliSessionState;
 import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
 import org.apache.hadoop.hive.ql.CommandNeedRetryException;
 import org.apache.hadoop.hive.ql.Driver;
 import org.apache.hadoop.hive.ql.session.SessionState;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hive.hcatalog.streaming.HiveEndPoint;
-import org.apache.hive.hcatalog.streaming.StreamingException;
 import org.apache.hive.hcatalog.streaming.SerializationError;
+import org.apache.storm.Config;
+import org.apache.storm.hive.bolt.HiveSetupUtil;
 import org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper;
 import org.apache.storm.hive.bolt.mapper.HiveMapper;
-import org.apache.storm.hive.bolt.HiveSetupUtil;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
-import org.apache.storm.Config;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
-import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
-import org.mockito.MockitoAnnotations;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.HashMap;
 
 public class TestHiveWriter {
     final static String dbName = "testdb";
@@ -114,7 +111,7 @@ public class TestHiveWriter {
             .withPartitionFields(new Fields(partNames));
         HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, Arrays.asList(partitionVals));
         HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
-                                           ,callTimeoutPool, mapper, ugi, "test-instantiate");
+                                           ,callTimeoutPool, mapper, ugi, "test-instantiate", false);
         writer.close();
     }
 
@@ -125,7 +122,7 @@ public class TestHiveWriter {
             .withPartitionFields(new Fields(partNames));
         HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, Arrays.asList(partitionVals));
         HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
-                                           , callTimeoutPool, mapper, ugi, "test-write-basic");
+                                           , callTimeoutPool, mapper, ugi, "test-write-basic", false);
         writeTuples(writer,mapper,3);
         writer.flush(false);
         writer.close();
@@ -140,7 +137,7 @@ public class TestHiveWriter {
 
         HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, Arrays.asList(partitionVals));
         HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
-                                           , callTimeoutPool, mapper, ugi, "test-write-multi-flush");
+                                           , callTimeoutPool, mapper, ugi, "test-write-multi-flush", false);
         Tuple tuple = generateTestTuple("1","abc");
         writer.write(mapper.mapRecord(tuple));
         tuple = generateTestTuple("2","def");
