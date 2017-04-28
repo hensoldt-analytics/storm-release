@@ -28,3 +28,4 @@ Changes only in Hortonworks github and not in Apache Storm release 0.10.0-beta1 
 * STORM-1989: X-Frame-Options support for Storm UI
 * STORM-994: Close download clients and channels to avoid resource leaks
 * STORM-1106. Netty Client Connection Attempts should not be limited
+* STORM-1114: Handle race condition in Storm/Trident transactional state when ZK nodes have already been created/deleted
