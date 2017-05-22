@@ -10,3 +10,4 @@ Changes only in Hortonworks github and not in Apache Storm release 0.10.0-beta1 
  * STORM-996: netty-unit-tests/test-batch demonstrates out-of-order delivery
  * STORM-992: A bug in the timer.clj might cause unexpected delay to schedule new event
  * STORM-412: Allow users to modify logging levels of running topologies
+* STORM-2158: Fix OutOfMemoryError in Nimbus' SimpleTransportPlugin
