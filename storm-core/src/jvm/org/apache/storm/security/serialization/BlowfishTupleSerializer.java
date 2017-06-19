@@ -80,6 +80,7 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
     public static void main(String[] args) {
         try{
             KeyGenerator kgen = KeyGenerator.getInstance("Blowfish");
+            kgen.init(256);
             SecretKey skey = kgen.generateKey();
             byte[] raw = skey.getEncoded();
             String keyString = new String(Hex.encodeHex(raw));
