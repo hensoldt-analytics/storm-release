@@ -86,7 +86,6 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
             System.out.println("storm -c "+SECRET_KEY+"="+keyString+" -c "+Config.TOPOLOGY_TUPLE_SERIALIZER+"="+BlowfishTupleSerializer.class.getName() + " ..." );
         } catch (Exception ex) {
             LOG.error(ex.getMessage());
-            ex.printStackTrace();
         }
     }    
 }
