@@ -79,14 +79,14 @@ public class AutoHBase extends AbstractAutoCreds {
     }
 
     @Override
-    protected  byte[] getHadoopCredentials(Map conf, String configKey) {
+    protected  byte[] getHadoopCredentials(Map<String, Object> conf, String configKey, final String topologyOwnerPrincipal) {
         Configuration configuration = getHadoopConfiguration(conf, configKey);
-        return getHadoopCredentials(conf, configuration);
+        return getHadoopCredentials(conf, configuration, topologyOwnerPrincipal);
     }
 
     @Override
-    protected byte[] getHadoopCredentials(Map conf) {
-        return getHadoopCredentials(conf, HBaseConfiguration.create());
+    protected byte[] getHadoopCredentials(Map<String, Object> conf, final String topologyOwnerPrincipal) {
+        return getHadoopCredentials(conf, HBaseConfiguration.create(), topologyOwnerPrincipal);
     }
 
     private Configuration getHadoopConfiguration(Map topoConf, String configKey) {
@@ -96,11 +96,9 @@ public class AutoHBase extends AbstractAutoCreds {
     }
 
     @SuppressWarnings("unchecked")
-    protected byte[] getHadoopCredentials(Map conf, Configuration hbaseConf) {
+    protected byte[] getHadoopCredentials(Map<String, Object> conf, Configuration hbaseConf, final String topologyOwnerPrincipal) {
         try {
             if(UserGroupInformation.isSecurityEnabled()) {
-                final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
-
                 UserProvider provider = UserProvider.instantiate(hbaseConf);
 
                 if (hbaseConf.get(HBASE_KEYTAB_FILE_KEY) == null) {
@@ -115,7 +113,7 @@ public class AutoHBase extends AbstractAutoCreds {
 
                 UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
 
-                final UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(topologySubmitterUser, ugi);
+                final UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(topologyOwnerPrincipal, ugi);
 
                 User user = User.create(ugi);
 
@@ -143,9 +141,9 @@ public class AutoHBase extends AbstractAutoCreds {
     }
 
     @Override
-    public void doRenew(Map<String, String> credentials, Map topologyConf) {
+    public void doRenew(Map<String, String> credentials, Map<String, Object> topologyConf, String ownerPrincipal) {
         //HBASE tokens are not renewable so we always have to get new ones.
-        populateCredentials(credentials, topologyConf);
+        populateCredentials(credentials, topologyConf, ownerPrincipal);
     }
 
     @Override
@@ -156,24 +154,34 @@ public class AutoHBase extends AbstractAutoCreds {
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-        Map conf = new HashMap();
-        conf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, args[0]); //with realm e.g. storm@WITZEND.COM
+        Map<String, Object> conf = new HashMap<>();
+        final String topologyOwnerPrincipal = args[0]; //with realm e.g. storm@WITZEND.COM
         conf.put(HBASE_PRINCIPAL_KEY,args[1]); // hbase principal storm-hbase@WITZEN.COM
         conf.put(HBASE_KEYTAB_FILE_KEY,args[2]); // storm hbase keytab /etc/security/keytabs/storm-hbase.keytab
 
         AutoHBase autoHBase = new AutoHBase();
         autoHBase.prepare(conf);
 
-        Map<String,String> creds  = new HashMap<String, String>();
-        autoHBase.populateCredentials(creds, conf);
+        Map<String,String> creds  = new HashMap<>();
+        autoHBase.populateCredentials(creds, conf, topologyOwnerPrincipal);
         LOG.info("Got HBase credentials" + autoHBase.getCredentials(creds));
 
         Subject s = new Subject();
         autoHBase.populateSubject(s, creds);
         LOG.info("Got a Subject " + s);
 
-        autoHBase.renew(creds, conf);
+        autoHBase.renew(creds, conf, topologyOwnerPrincipal);
         LOG.info("renewed credentials" + autoHBase.getCredentials(creds));
+    }
+
+    @Override
+    public void populateCredentials(Map<String, String> credentials, Map topoConf) {
+        throw new IllegalStateException("SHOULD NOT BE CALLED");
+    }
+
+    @Override
+    public void renew(Map<String, String> credentials, Map topologyConf) {
+        throw new IllegalStateException("SHOULD NOT BE CALLED");
     }
 }
 
