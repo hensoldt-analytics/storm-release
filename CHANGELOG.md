@@ -1,4 +1,18 @@
 ﻿## 1.1.1
+ * STORM-2640: Deprecate KafkaConsumer.subscribe API option, make KafkaConsumer.assign the default
+ * STORM-2642: Storm-kafka-client spout cannot be serialized when using manual partition assignment
+ * STORM-2541: Fix storm-kafka-client manual subscription not being able to start consuming
+ * STORM-2639: Kafka Spout incorrectly computes numCommittedOffsets due to voids in the topic (topic compaction)
+ * STORM-2544: Fixing issue in acking of tuples that hit retry limit under manual commit mode
+ * STORM-2548: Simplify KafkaSpoutConfig to avoid duplicating KafkaConsumer configuration parameters
+ * STORM-2618: Add TridentKafkaStateUpdater for storm-kafka-client
+ * STORM-2506: Print mapping between Task ID and Kafka Partitions
+ * STORM-2568: Fix getTopicsString - String.valueOf returns square bracket
+ * STORM-2552: KafkaSpoutMessageId should be serializable
+ * STORM-2413: Make new Kafka spout respect tuple retry limit
+ * STORM-2512: Make constructor public and add one more builder constructor
+ * STORM-2505: Spout to support topic compaction
+ * STORM-2343: New Kafka spout can stop emitting tuples if more than maxUncommittedOffsets tuples fail at once.
  * STORM-2429: Properly validate supervisor.scheduler.meta
  * STORM-2194: Stop ignoring socket timeout error from executor
  * STORM-2451: windows storm.cmd does not set log4j2 config file correctly by default
