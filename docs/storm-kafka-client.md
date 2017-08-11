@@ -1,18 +1,23 @@
-#Storm Apache Kafka integration using the kafka-client jar
+---
+title: Storm Kafka Integration (0.10.x+)
+layout: documentation
+documentation: true
+---
+# Storm Apache Kafka integration using the kafka-client jar
 This includes the new Apache Kafka consumer API.
 
-##Compatibility
+## Compatibility
 
 Apache Kafka versions 0.10 onwards
 
-##Writing to Kafka as part of your topology
+## Writing to Kafka as part of your topology
 You can create an instance of org.apache.storm.kafka.bolt.KafkaBolt and attach it as a component to your topology or if you
 are using trident you can use org.apache.storm.kafka.trident.TridentState, org.apache.storm.kafka.trident.TridentStateFactory and
 org.apache.storm.kafka.trident.TridentKafkaUpdater.
 
 You need to provide implementations for the following 2 interfaces
 
-###TupleToKafkaMapper and TridentTupleToKafkaMapper
+### TupleToKafkaMapper and TridentTupleToKafkaMapper
 These interfaces have 2 methods defined:
 
 ```java
@@ -28,13 +33,15 @@ reasons. Alternatively you could also specify a different key and message field 
 In the TridentKafkaState you must specify what is the field name for key and message as there is no default constructor.
 These should be specified while constructing an instance of FieldNameBasedTupleToKafkaMapper.
 
-###KafkaTopicSelector and trident KafkaTopicSelector
+### KafkaTopicSelector and trident KafkaTopicSelector
 This interface has only one method
+
 ```java
 public interface KafkaTopicSelector {
     String getTopics(Tuple/TridentTuple tuple);
 }
 ```
+
 The implementation of this interface should return the topic to which the tuple's key/message mapping needs to be published
 You can return a null and the message will be ignored. If you have one static topic name then you can use
 DefaultTopicSelector.java and set the name of the topic in the constructor.
@@ -48,8 +55,9 @@ You can provide all the producer properties in your Storm topology by calling `K
 Section "Important configuration properties for the producer" for more details.
 These are also defined in `org.apache.kafka.clients.producer.ProducerConfig`
 
-###Using wildcard kafka topic match
+### Using wildcard kafka topic match
 You can do a wildcard topic match by adding the following config
+
 ```
      Config config = new Config();
      config.put("kafka.topic.wildcard.match",true);
@@ -59,9 +67,10 @@ You can do a wildcard topic match by adding the following config
 After this you can specify a wildcard topic for matching e.g. clickstream.*.log.  This will match all streams matching clickstream.my.log, clickstream.cart.log etc
 
 
-###Putting it all together
+### Putting it all together
 
 For the bolt :
+
 ```java
         TopologyBuilder builder = new TopologyBuilder();
 
@@ -118,7 +127,7 @@ For Trident:
                 .withProducerProperties(props)
                 .withKafkaTopicSelector(new DefaultTopicSelector("test"))
                 .withTridentTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper("word", "count"));
-        stream.partitionPersist(stateFactory, fields, new TridentKafkaUpdater(), new Fields());
+        stream.partitionPersist(stateFactory, fields, new TridentKafkaStateUpdater(), new Fields());
 
         Config conf = new Config();
         StormSubmitter.submitTopology("kafkaTridentTest", conf, topology.build());
@@ -169,30 +178,30 @@ The API is written with java 8 lambda expressions in mind.  It works with java7 
 
 #### Create a Simple Insecure Spout
 The following will consume all events published to "topic" and send them to MyBolt with the fields "topic", "partition", "offset", "key", "value".
+
 ```java
 
 final TopologyBuilder tp = new TopologyBuilder();
 tp.setSpout("kafka_spout", new KafkaSpout<>(KafkaSpoutConfig.builder("127.0.0.1:" + port, "topic").build()), 1);
 tp.setBolt("bolt", new myBolt()).shuffleGrouping("kafka_spout");
 ...
-
 ```
 
 #### Wildcard Topics
 Wildcard topics will consume from all topics that exist in the specified brokers list and match the pattern.  So in the following example
 "topic", "topic_foo" and "topic_bar" will all match the pattern "topic.*", but "not_my_topic" would not match. 
+
 ```java
 
 final TopologyBuilder tp = new TopologyBuilder();
 tp.setSpout("kafka_spout", new KafkaSpout<>(KafkaSpoutConfig.builder("127.0.0.1:" + port, Pattern.compile("topic.*")).build()), 1);
 tp.setBolt("bolt", new myBolt()).shuffleGrouping("kafka_spout");
 ...
-
 ```
 
 #### Multiple Streams
+
 This uses java 8 lambda expressions.
-```java
 
 final TopologyBuilder tp = new TopologyBuilder();
 
@@ -207,7 +216,6 @@ tp.setSpout("kafka_spout", new KafkaSpout<>(KafkaSpoutConfig.builder("127.0.0.1:
 tp.setBolt("bolt", new myBolt()).shuffleGrouping("kafka_spout", "STREAM_1");
 tp.setBolt("another", new myOtherBolt()).shuffleGrouping("kafka_spout", "STREAM_2");
 ...
-
 ```
 
 #### Trident
@@ -218,7 +226,6 @@ final Stream spoutStream = tridentTopology.newStream("kafkaSpout",
     new KafkaTridentSpoutOpaque<>(KafkaSpoutConfig.builder("127.0.0.1:" + port, Pattern.compile("topic.*")).build()))
       .parallelismHint(1)
 ...
-
 ```
 
 Trident does not support multiple streams and will ignore any streams set for output.  If however the Fields are not identical for each
@@ -234,6 +241,7 @@ specific stream.  To do this you will need to return an instance of `org.apache.
 specific stream the tuple should go to.
 
 For Example:
+
 ```java
 return new KafkaTuple(1, 2, 3, 4).routedTo("bar");
 ```
@@ -256,6 +264,7 @@ please be careful when using these or implementing your own.
 ## Use the Maven Shade Plugin to Build the Uber Jar
 
 Add the following to `REPO_HOME/storm/external/storm-kafka-client/pom.xml`
+
 ```xml
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
@@ -323,7 +332,7 @@ When selecting a kafka client version, you should ensure -
  2. The kafka client selected by you should be wire compatible with the broker. e.g. 0.9.x client will not work with 
  0.8.x broker. 
 
-#Kafka Spout Performance Tuning
+# Kafka Spout Performance Tuning
 
 The Kafka spout provides two internal parameters to control its performance. The parameters can be set using the [KafkaSpoutConfig] (https://github.com/apache/storm/blob/1.0.x-branch/external/storm-kafka-client/src/main/java/org/apache/storm/kafka/spout/KafkaSpoutConfig.java) methods [setOffsetCommitPeriodMs] (https://github.com/apache/storm/blob/1.0.x-branch/external/storm-kafka-client/src/main/java/org/apache/storm/kafka/spout/KafkaSpoutConfig.java#L189-L193) and [setMaxUncommittedOffsets] (https://github.com/apache/storm/blob/1.0.x-branch/external/storm-kafka-client/src/main/java/org/apache/storm/kafka/spout/KafkaSpoutConfig.java#L211-L217). 
 
@@ -340,7 +349,7 @@ The [Kafka consumer config] (http://kafka.apache.org/documentation.html#consumer
 
 Depending on the structure of your Kafka cluster, distribution of the data, and availability of data to poll, these parameters will have to be configured appropriately. Please refer to the Kafka documentation on Kafka parameter tuning.
 
-###Default values
+### Default values
 
 Currently the Kafka spout has has the following default values, which have shown to give good performance in the test environment as described in this [blog post] (https://hortonworks.com/blog/microbenchmarking-storm-1-0-performance/)
 
@@ -358,6 +367,7 @@ To enable it, you need to:
 * enable *AutoCommitMode* in Kafka consumer configuration; 
 
 Here's one example to set AutoCommitMode in KafkaSpout:
+
 ```java
 KafkaSpoutConfig<String, String> kafkaConf = KafkaSpoutConfig
 		.builder(String bootstrapServers, String ... topics)
