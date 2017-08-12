@@ -78,7 +78,6 @@ public class SingleTopicKafkaSpoutTest {
     private KafkaConsumerFactory<String, String> consumerFactory;
     private KafkaSpout<String, String> spout;
     private final int maxPollRecords = 10;
-    private int maxRetries = 3;
 
     @Before
     public void setUp() {
