@@ -41,6 +41,13 @@ public class SingleTopicKafkaSpoutConfiguration {
     public static final String STREAM = "test_stream";
     public static final String TOPIC = "test";
 
+    public static KafkaSpoutConfig.Builder<String, String> createKafkaSpoutConfigBuilder(int port) {
+        return setCommonSpoutConfig(KafkaSpoutConfig.builder("127.0.0.1:" + port, TOPIC));
+    }
+
+    public static KafkaSpoutConfig.Builder<String, String> createKafkaSpoutConfigBuilder(Subscription subscription, int port) {
+        return setCommonSpoutConfig(new KafkaSpoutConfig.Builder<String, String>("127.0.0.1:" + port, subscription));
+    }
     /**
      * Retry in a tight loop (keep unit tests fasts).
      */
