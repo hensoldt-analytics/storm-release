@@ -62,4 +62,12 @@ Changes only in Hortonworks github and not in Apache Storm release 1.0.2
  * STORM-2338: Subprocess exception handling is broken in storm.py on Windows environment
  * STORM-2266: Close NimbusClient instances appropriately
  * STORM-2360: Storm-Hive: Thrift version mismatch with storm-core
-* STORM-1114: Handle race condition in Storm/Trident transactional state when ZK nodes have already been created/deleted
+ * STORM-1114: Handle race condition in Storm/Trident transactional state when ZK nodes have already been created/deleted
+ * STORM-2018: Just the merge
+ * STORM-2018: Removed resource location support
+ * STORM-2185: Storm Supervisor doesn't delete directories properly sometimes
+ * STORM-2429: Properly validate supervisor.scheduler.meta
+ * STORM-2395: storm.cmd supervisor calls the wrong class name use org.apache.storm.daemon.supervisor.Supervisor instead
+ * STORM-2293: hostname should only refer node's 'storm.local.hostname'
+ * STORM-2325: Logviewer doesn't consider 'storm.local.hostname'
+ * BUG-85514: User improvements
