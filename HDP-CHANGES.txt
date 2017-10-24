@@ -1,4 +1,13 @@
 Changes only in Hortonworks github and not in Apache Storm release 1.1.0
+ * STORM-2779: NPE on shutting down WindowedBoltExecutor
+ * STORM-2489: Overlap and data loss on WindowedBolt based on Duration
+ * STORM-2724: Shutdown ExecutorService in WaterMarkEventGenerator in shutdown phase
+ * STORM-2516: WindowedBoltExecutorTest.testExecuteWithLateTupleStream is flaky
+ * STORM-2598: Add proxy server option for dependency resolver
+ * STORM-2481: Upgrade Aether version to resolve Aether bug BUG-451566
+ * STORM-2779: NPE on shutting down WindowedBoltExecutor
+ * STORM-2563: Remove the workaround to handle missing UGI.loginUserFromSubject
+ * STORM-2562: Use stronger key size for blow fish key generator and get rid of stack trace
  * STORM-2640: Deprecate KafkaConsumer.subscribe API option, make KafkaConsumer.assign the default
  * STORM-2642: Storm-kafka-client spout cannot be serialized when using manual partition assignment
  * STORM-2541: Fix storm-kafka-client manual subscription not being able to start consuming
