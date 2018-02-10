@@ -40,3 +40,4 @@ Changes only in Hortonworks github and not in Apache Storm release 1.1.0
  * STORM-2450: Write resources into correct local directory
  * STORM-2440: Kill process if executor catches `java.net.SocketTimeoutException`
  * STORM-2432: Storm-Kafka-Client Trident Spout Seeks Incorrect Offset With UNCOMMITTED_LATEST Strategy
+* STORM-2652: fix error in open method of JmsSpout
