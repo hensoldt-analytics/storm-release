@@ -41,3 +41,9 @@ Changes only in Hortonworks github and not in Apache Storm release 1.1.0
  * STORM-2440: Kill process if executor catches `java.net.SocketTimeoutException`
  * STORM-2432: Storm-Kafka-Client Trident Spout Seeks Incorrect Offset With UNCOMMITTED_LATEST Strategy
  * STORM-2666: Fix storm-kafka-client spout sometimes emitting messages that were already committed.
+ * STORM-2870: FileBasedEventLogger leaks non-daemon ExecutorService which prevents process to be finished
+ * STORM-2854: Expose IEventLogger to make event logging pluggable
+ * STORM-2652: Exception thrown in JmsSpout open method
+ * STORM-2841: testNoAcksIfFlushFails UT fails with NullPointerException
+ * STORM-2960: Better to stress importance of setting up proper OS account for Storm processes
+
