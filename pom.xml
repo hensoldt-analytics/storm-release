@@ -257,9 +257,9 @@
         <zookeeper.version>3.4.6.3.0.0.2-86</zookeeper.version>
         <clojure-data-codec.version>0.1.0</clojure-data-codec.version>
         <clojure-contrib.version>1.2.0</clojure-contrib.version>
-        <hive.version>3.0.0.3.0.0.2-86</hive.version>
-        <hadoop.version>3.0.0.3.0.0.2-86</hadoop.version>
-        <hbase.version>2.0.0.3.0.0.2-86</hbase.version>
+        <hive.version>3.0.0.3.0.0.2-150</hive.version>
+        <hadoop.version>3.0.0.3.0.0.2-150</hadoop.version>
+        <hbase.version>2.0.0.3.0.0.2-150</hbase.version>
         <kryo.version>3.0.3</kryo.version>
         <servlet.version>2.5</servlet.version>
         <joda-time.version>2.3</joda-time.version>

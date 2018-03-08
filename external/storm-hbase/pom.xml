@@ -36,7 +36,7 @@
     </developers>
 
     <properties>
-        <hdfs.version>2.7.3.2.6.0.2-SNAPSHOT</hdfs.version>
+        <hdfs.version>${hadoop.version}</hdfs.version>
     </properties>
 
     <dependencies>

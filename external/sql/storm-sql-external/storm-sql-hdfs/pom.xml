@@ -27,6 +27,11 @@
 
     <artifactId>storm-sql-hdfs</artifactId>
 
+
+    <properties>
+        <jetty.version>9.3.19.v20170502</jetty.version>
+    </properties>
+
     <developers>
         <developer>
             <id>vesense</id>
