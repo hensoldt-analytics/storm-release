@@ -722,6 +722,10 @@
                             <pattern>metrics.utils</pattern>
                             <shadedPattern>org.apache.storm.shade.metrics.utils</shadedPattern>
                         </relocation>
+                        <relocation>
+                            <pattern>org.apache.hadoop</pattern>
+                            <shadedPattern>org.apache.storm.org.apache.hadoop</shadedPattern>
+                        </relocation>
                     </relocations>
                     <transformers>
                         <transformer implementation="org.apache.storm.maven.shade.clojure.ClojureTransformer" />
