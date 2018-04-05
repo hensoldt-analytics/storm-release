@@ -31,6 +31,7 @@ import org.apache.storm.utils.TupleUtils;
 import org.apache.storm.Config;
 import org.apache.storm.hive.common.HiveWriter;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 import org.apache.storm.hive.common.HiveOptions;
@@ -40,10 +41,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -59,10 +59,12 @@ public class HiveBolt extends BaseRichBolt {
     private transient Timer heartBeatTimer;
     private AtomicBoolean sendHeartBeat = new AtomicBoolean(false);
     private UserGroupInformation ugi = null;
-    private Map<HiveEndPoint, HiveWriter> allWriters;
     private BatchHelper batchHelper;
     private String agentInfo;
     private boolean tokenAuthEnabled;
+
+    @VisibleForTesting
+    protected Map<HiveEndPoint, HiveWriter> allWriters;
 
     public HiveBolt(HiveOptions options) {
         this.options = options;
@@ -133,7 +135,7 @@ public class HiveBolt extends BaseRichBolt {
     @Override
     public void cleanup() {
         sendHeartBeat.set(false);
-        for (Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
+        for (Map.Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
             try {
                 HiveWriter w = entry.getValue();
                 w.flushAndClose();
@@ -222,7 +224,7 @@ public class HiveBolt extends BaseRichBolt {
      * Abort current Txn on all writers
      */
     private void abortAllWriters() throws InterruptedException, StreamingException, HiveWriter.TxnBatchFailure {
-        for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+        for (Map.Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
             try {
                 entry.getValue().abort();
             } catch (Exception e) {
@@ -236,7 +238,7 @@ public class HiveBolt extends BaseRichBolt {
      */
     private void closeAllWriters() {
         //1) Retire writers
-        for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+        for (Map.Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
             try {
                 entry.getValue().close();
             } catch(Exception e) {
@@ -247,7 +249,8 @@ public class HiveBolt extends BaseRichBolt {
         allWriters.clear();
     }
 
-    private HiveWriter getOrCreateWriter(HiveEndPoint endPoint)
+    @VisibleForTesting
+    HiveWriter getOrCreateWriter(HiveEndPoint endPoint)
         throws HiveWriter.ConnectFailure, InterruptedException {
         try {
             HiveWriter writer = allWriters.get( endPoint );
@@ -278,7 +281,7 @@ public class HiveBolt extends BaseRichBolt {
         LOG.info("Attempting close eldest writers");
         long oldestTimeStamp = System.currentTimeMillis();
         HiveEndPoint eldest = null;
-        for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+        for (Map.Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
             if (entry.getValue().getLastUsed() < oldestTimeStamp) {
                 eldest = entry.getKey();
                 oldestTimeStamp = entry.getValue().getLastUsed();
@@ -307,7 +310,7 @@ public class HiveBolt extends BaseRichBolt {
         long now = System.currentTimeMillis();
 
         //1) Find retirement candidates
-        for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
+        for (Map.Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
             if(now - entry.getValue().getLastUsed() > options.getIdleTimeout()) {
                 ++count;
                 retire(entry.getKey());

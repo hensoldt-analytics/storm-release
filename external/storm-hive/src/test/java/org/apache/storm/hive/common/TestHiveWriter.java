@@ -20,14 +20,15 @@ package org.apache.storm.hive.common;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import junit.framework.Assert;
-import org.apache.hadoop.hive.cli.CliSessionState;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
-import org.apache.hadoop.hive.ql.Driver;
-import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hive.hcatalog.streaming.HiveEndPoint;
+import org.apache.hive.hcatalog.streaming.RecordWriter;
 import org.apache.hive.hcatalog.streaming.SerializationError;
+import org.apache.hive.hcatalog.streaming.StreamingConnection;
+import org.apache.hive.hcatalog.streaming.StreamingException;
+import org.apache.hive.hcatalog.streaming.TransactionBatch;
 import org.apache.storm.Config;
 import org.apache.storm.hive.bolt.HiveSetupUtil;
 import org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper;
@@ -38,13 +39,12 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.Mockito;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
@@ -59,19 +59,63 @@ public class TestHiveWriter {
     public static final String[] partNames = { PART1_NAME, PART2_NAME };
     final String[] partitionVals = {"sunnyvale","ca"};
     final String[] colNames = {"id","msg"};
-    private String[] colTypes = { "int", "string" };
     private final int port;
     private final String metaStoreURI;
     private final HiveConf conf;
     private ExecutorService callTimeoutPool;
-    private final Driver driver;
-    private String dbLocation;
     int timeout = 10000; // msec
     UserGroupInformation ugi = null;
 
     @Rule
     public TemporaryFolder dbFolder = new TemporaryFolder();
 
+    private static class TestingHiveWriter extends HiveWriter {
+
+        private StreamingConnection mockedStreamingConn;
+        private TransactionBatch mockedTxBatch;
+
+        public TestingHiveWriter(HiveEndPoint endPoint, int txnsPerBatch, boolean autoCreatePartitions, long callTimeout, ExecutorService callTimeoutPool, HiveMapper mapper, UserGroupInformation ugi, String agentInfo, boolean tokenAuthEnabled) throws InterruptedException, ConnectFailure {
+            super(endPoint, txnsPerBatch, autoCreatePartitions, callTimeout, callTimeoutPool, mapper, ugi, agentInfo, tokenAuthEnabled);
+        }
+
+        @Override
+        synchronized StreamingConnection newConnection(UserGroupInformation ugi, boolean tokenAuthEnabled) throws InterruptedException, ConnectFailure {
+            if (mockedStreamingConn == null) {
+                mockedStreamingConn = Mockito.mock(StreamingConnection.class);
+                mockedTxBatch = Mockito.mock(TransactionBatch.class);
+
+                try {
+                    Mockito.when(mockedStreamingConn.fetchTransactionBatch(Mockito.anyInt(), Mockito.any(RecordWriter.class)))
+                            .thenReturn(mockedTxBatch);
+                } catch (StreamingException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            return mockedStreamingConn;
+        }
+
+        public TransactionBatch getMockedTxBatch() {
+            return mockedTxBatch;
+        }
+    }
+
+    private static class MockedDelemiteredRecordHiveMapper extends DelimitedRecordHiveMapper {
+        private final RecordWriter mockedRecordWriter;
+
+        public MockedDelemiteredRecordHiveMapper() {
+            this.mockedRecordWriter = Mockito.mock(RecordWriter.class);
+        }
+
+        @Override
+        public RecordWriter createRecordWriter(HiveEndPoint endPoint) throws StreamingException, IOException, ClassNotFoundException {
+            return mockedRecordWriter;
+        }
+
+        public RecordWriter getMockedRecordWriter() {
+            return mockedRecordWriter;
+        }
+    }
 
     public TestHiveWriter() throws Exception {
         port = 9083;
@@ -86,65 +130,52 @@ public class TestHiveWriter {
         if(metaStoreURI!=null) {
             conf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
         }
-        SessionState.start(new CliSessionState(conf));
-        driver = new Driver(conf);
-    }
-
-    @Before
-    public void setUp() throws Exception {
-        TxnDbUtil.cleanDb(conf);
-        TxnDbUtil.prepDb(conf);
-        HiveSetupUtil.dropDB(conf, dbName);
-        dbLocation = dbFolder.newFolder(dbName + ".db").getCanonicalPath();
-        dbLocation = dbLocation.replaceAll("\\\\","/"); //windows
-
-        HiveSetupUtil.createDbAndTable(driver, conf, dbName, tblName, Arrays.asList(partitionVals),
-                colNames, colTypes, partNames, dbLocation);
-
     }
 
     @Test
     public void testInstantiate() throws Exception {
-        DelimitedRecordHiveMapper mapper = new DelimitedRecordHiveMapper()
+        DelimitedRecordHiveMapper mapper = new MockedDelemiteredRecordHiveMapper()
             .withColumnFields(new Fields(colNames))
             .withPartitionFields(new Fields(partNames));
         HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, Arrays.asList(partitionVals));
-        HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
+        TestingHiveWriter writer = new TestingHiveWriter(endPoint, 10, true, timeout
                                            ,callTimeoutPool, mapper, ugi, "test-instantiate", false);
         writer.close();
     }
 
     @Test
     public void testWriteBasic() throws Exception {
-        DelimitedRecordHiveMapper mapper = new DelimitedRecordHiveMapper()
+        DelimitedRecordHiveMapper mapper = new MockedDelemiteredRecordHiveMapper()
             .withColumnFields(new Fields(colNames))
             .withPartitionFields(new Fields(partNames));
         HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, Arrays.asList(partitionVals));
-        HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
+        TestingHiveWriter writer = new TestingHiveWriter(endPoint, 10, true, timeout
                                            , callTimeoutPool, mapper, ugi, "test-write-basic", false);
         writeTuples(writer,mapper,3);
         writer.flush(false);
         writer.close();
-        checkRecordCountInTable(dbName,tblName,3);
+        Mockito.verify(writer.getMockedTxBatch(), Mockito.times(3)).write(Mockito.any(byte[].class));
     }
 
     @Test
     public void testWriteMultiFlush() throws Exception {
-        DelimitedRecordHiveMapper mapper = new DelimitedRecordHiveMapper()
+        DelimitedRecordHiveMapper mapper = new MockedDelemiteredRecordHiveMapper()
             .withColumnFields(new Fields(colNames))
             .withPartitionFields(new Fields(partNames));
 
         HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, Arrays.asList(partitionVals));
-        HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
+        TestingHiveWriter writer = new TestingHiveWriter(endPoint, 10, true, timeout
                                            , callTimeoutPool, mapper, ugi, "test-write-multi-flush", false);
         Tuple tuple = generateTestTuple("1","abc");
         writer.write(mapper.mapRecord(tuple));
         tuple = generateTestTuple("2","def");
         writer.write(mapper.mapRecord(tuple));
         Assert.assertEquals(writer.getTotalRecords(), 2);
-        checkRecordCountInTable(dbName,tblName,0);
+        Mockito.verify(writer.getMockedTxBatch(), Mockito.times(2)).write(Mockito.any(byte[].class));
+        Mockito.verify(writer.getMockedTxBatch(), Mockito.never()).commit();
         writer.flush(true);
         Assert.assertEquals(writer.getTotalRecords(), 0);
+        Mockito.verify(writer.getMockedTxBatch(), Mockito.atLeastOnce()).commit();
 
         tuple = generateTestTuple("3","ghi");
         writer.write(mapper.mapRecord(tuple));
@@ -154,7 +185,7 @@ public class TestHiveWriter {
         writer.write(mapper.mapRecord(tuple));
         writer.flush(true);
         writer.close();
-        checkRecordCountInTable(dbName,tblName,4);
+        Mockito.verify(writer.getMockedTxBatch(), Mockito.times(4)).write(Mockito.any(byte[].class));
     }
 
     private Tuple generateTestTuple(Object id, Object msg) {
@@ -177,20 +208,6 @@ public class TestHiveWriter {
             Tuple tuple = generateTestTuple(id,msg);
             writer.write(mapper.mapRecord(tuple));
         }
-    }
-
-    private void checkRecordCountInTable(String dbName,String tableName,int expectedCount)
-        throws IOException {
-        int count = listRecordsInTable(dbName,tableName).size();
-        Assert.assertEquals(expectedCount, count);
-    }
-
-    private  ArrayList<String> listRecordsInTable(String dbName,String tableName)
-        throws IOException {
-        driver.run("select * from " + dbName + "." + tableName);
-        ArrayList<String> res = new ArrayList<String>();
-        driver.getResults(res);
-        return res;
     }
 
 }
