@@ -221,6 +221,22 @@
                     <groupId>com.google.code.findbugs</groupId>
                     <artifactId>jsr305</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.fusesource.leveldbjni</groupId>
+                    <artifactId>leveldbjni-all</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.slider</groupId>
+                    <artifactId>slider-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>tomcat</groupId>
+                    <artifactId>jasper-compiler</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>tomcat</groupId>
+                    <artifactId>jasper-runtime</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -255,6 +271,10 @@
                 <exclusion>
                     <groupId>com.sun.jersey</groupId>
                     <artifactId>jersey-server</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.fusesource.leveldbjni</groupId>
+                    <artifactId>leveldbjni-all</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
