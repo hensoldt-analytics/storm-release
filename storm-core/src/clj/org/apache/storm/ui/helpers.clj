@@ -241,12 +241,15 @@
                     (.setPort (options :port 80))
                     (.setHost (options :host))
                     (.setMaxIdleTime (options :max-idle-time 200000)))
-        server    (doto (Server.)
-                    (.addConnector connector)
-                    (.setSendDateHeader true))
-        https-port (options :https-port)]
-    (if (and (not-nil? https-port) (> https-port 0)) (remove-non-ssl-connectors server))
-    server))
+        server (doto (Server.)
+                 (.addConnector connector)
+                 (.setSendDateHeader true))
+        https-port (options :https-port)
+        send-server-version (options :send-server-version)]
+    (do
+      (.setSendServerVersion server (if (not-nil? send-server-version) send-server-version false))
+      (if (and (not-nil? https-port) (> https-port 0)) (remove-non-ssl-connectors server))
+      server)))
 
 (defn storm-run-jetty
   "Modified version of run-jetty
