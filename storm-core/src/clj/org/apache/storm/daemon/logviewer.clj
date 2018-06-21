@@ -1203,7 +1203,8 @@
           truststore-password (conf LOGVIEWER-HTTPS-TRUSTSTORE-PASSWORD)
           truststore-type (conf LOGVIEWER-HTTPS-TRUSTSTORE-TYPE)
           want-client-auth (conf LOGVIEWER-HTTPS-WANT-CLIENT-AUTH)
-          need-client-auth (conf LOGVIEWER-HTTPS-NEED-CLIENT-AUTH)]
+          need-client-auth (conf LOGVIEWER-HTTPS-NEED-CLIENT-AUTH)
+          send-server-version (conf HTTP-RESPONSE-HEADER-SERVER-VERSION)]
       (storm-run-jetty {:port (int (conf LOGVIEWER-PORT))
                         :configurator (fn [server]
                                         (config-ssl server
@@ -1219,7 +1220,8 @@
                                                     need-client-auth)
                                         (doseq [connector (.getConnectors server)]
                                           (.setRequestHeaderSize connector header-buffer-size))
-                                        (config-filter conf server middle filters-confs))}))
+                                        (config-filter conf server middle filters-confs))
+                        :send-server-version send-server-version}))
   (catch Exception ex
     (log-error ex))))
 
