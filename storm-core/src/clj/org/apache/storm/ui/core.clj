@@ -1457,7 +1457,9 @@
           https-ts-type (conf UI-HTTPS-TRUSTSTORE-TYPE)
           https-want-client-auth (conf UI-HTTPS-WANT-CLIENT-AUTH)
           https-need-client-auth (conf UI-HTTPS-NEED-CLIENT-AUTH)
-          http-x-frame-options (conf UI-HTTP-X-FRAME-OPTIONS)]
+          http-x-frame-options (conf UI-HTTP-X-FRAME-OPTIONS)
+          send-server-version (conf HTTP-RESPONSE-HEADER-SERVER-VERSION)
+          ]
       (start-metrics-reporters conf)
       (validate-x-frame-options! http-x-frame-options)
       (storm-run-jetty {:port (conf UI-PORT)
@@ -1477,7 +1479,9 @@
                                                     https-want-client-auth)
                                         (doseq [connector (.getConnectors server)]
                                           (.setRequestHeaderSize connector header-buffer-size))
-                                        (config-filter server app filters-confs http-x-frame-options))}))
+                                        (config-filter server app filters-confs http-x-frame-options))
+                        :send-server-version send-server-version}))
+
    (catch Exception ex
      (log-error ex))))
 

@@ -938,6 +938,13 @@ public class Config extends HashMap<String, Object> {
     @isString
     public static final String UI_HTTP_X_FRAME_OPTIONS = "ui.http.x-frame-options";
 
+
+    /**
+     * Whether to send the 'Server:' header in the Storm UI and log viewer HTTP response. (default false).
+     */
+    @isBoolean
+    public static final String HTTP_RESPONSE_HEADER_SERVER_VERSION = "http.response.header.server.version";
+
     /**
      * The hosts that Pacemaker is running on.
      */
