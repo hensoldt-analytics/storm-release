@@ -121,6 +121,13 @@
             <version>${hadoop.version}</version>
             <scope>test</scope>
         </dependency>
+        <!-- required for fixing weird unit test failure while doing a top level build -->
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-auth</artifactId>
+            <version>${hadoop.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>

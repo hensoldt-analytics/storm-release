@@ -18,27 +18,24 @@
  */
 package org.apache.storm.hdfs.blobstore;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.AtomicOutputStream;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.generated.AccessControl;
-import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.KeyAlreadyExistsException;
-import org.apache.storm.generated.KeyNotFoundException;
-import org.apache.storm.generated.ReadableBlobMeta;
-import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.AccessControlType;
-
+import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
 import org.apache.storm.security.auth.NimbusPrincipal;
 import org.apache.storm.security.auth.SingleUserPrincipal;
-import org.apache.storm.utils.Utils;
-import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.Ignore;
-import org.mockito.Mockito;
+import org.junit.Rule;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,28 +44,23 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.UUID;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Iterator;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.*;
-
-import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
-import org.junit.ClassRule;
 
 public class BlobStoreTest {
 
-    @ClassRule
-    public static final MiniDFSClusterRule DFS_CLUSTER_RULE = new MiniDFSClusterRule();
+    @Rule
+    public MiniDFSClusterRule DFS_CLUSTER_RULE = new MiniDFSClusterRule();
 
     private static final Logger LOG = LoggerFactory.getLogger(BlobStoreTest.class);
     URI base;
@@ -176,7 +168,6 @@ public class BlobStoreTest {
 
     }
 
-    @Ignore
     @Test
     public void testHdfsReplication()
         throws Exception {
@@ -185,7 +176,6 @@ public class BlobStoreTest {
         }
     }
 
-    @Ignore
     @Test
     public void testBasicHdfs()
         throws Exception {
@@ -194,7 +184,6 @@ public class BlobStoreTest {
         }
     }
 
-    @Ignore
     @Test
     public void testMultipleHdfs()
         throws Exception {
@@ -204,7 +193,6 @@ public class BlobStoreTest {
         }
     }
 
-    @Ignore
     @Test
     public void testHdfsWithAuth()
         throws Exception {
