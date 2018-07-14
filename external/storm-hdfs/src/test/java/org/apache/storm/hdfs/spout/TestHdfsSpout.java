@@ -18,15 +18,6 @@
  */
 package org.apache.storm.hdfs.spout;
 
-import org.apache.storm.Config;
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.hadoop.hdfs.DistributedFileSystem;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.storm.hdfs.common.HdfsUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -34,11 +25,22 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
+import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
-import org.junit.Before;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.storm.Config;
+import org.apache.storm.hdfs.common.HdfsUtils;
+import org.apache.storm.hdfs.common.HdfsUtils.Pair;
+import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
+import org.apache.storm.spout.SpoutOutputCollector;
+import org.apache.storm.task.TopologyContext;
 import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
@@ -55,14 +57,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.storm.hdfs.common.HdfsUtils.Pair;
-import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
-import org.junit.ClassRule;
-
 public class TestHdfsSpout {
 
-    @ClassRule
-    public static MiniDFSClusterRule DFS_CLUSTER_RULE = new MiniDFSClusterRule();
+    @Rule
+    public MiniDFSClusterRule DFS_CLUSTER_RULE = new MiniDFSClusterRule();
+
     @Rule
     public TemporaryFolder tempFolder = new TemporaryFolder();
     public File baseFolder;
@@ -74,18 +73,10 @@ public class TestHdfsSpout {
     private static DistributedFileSystem fs;
     private static final Configuration conf = new Configuration();
 
-    @BeforeClass
-    public static void setupClass() throws IOException {
-        fs = DFS_CLUSTER_RULE.getDfscluster().getFileSystem();
-    }
-
-    @AfterClass
-    public static void teardownClass() throws IOException {
-        fs.close();
-    }
 
     @Before
     public void setup() throws Exception {
+        fs = DFS_CLUSTER_RULE.getDfscluster().getFileSystem();
         baseFolder = tempFolder.newFolder("hdfsspout");
         source = new Path(baseFolder.toString() + "/source");
         fs.mkdirs(source);
@@ -98,6 +89,7 @@ public class TestHdfsSpout {
     @After
     public void shutDown() throws IOException {
         fs.delete(new Path(baseFolder.toString()), true);
+        fs.close();
     }
 
     @Test
