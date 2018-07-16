@@ -210,6 +210,10 @@
                     <artifactId>apache-curator</artifactId>
                 </exclusion>
                 <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-client</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.apache.avro</groupId>
                     <artifactId>avro</artifactId>
                 </exclusion>
