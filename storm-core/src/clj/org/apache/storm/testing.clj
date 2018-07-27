@@ -140,6 +140,7 @@
         [zk-port zk-handle] (if-not (contains? daemon-conf STORM-ZOOKEEPER-SERVERS)
                               (zk/mk-inprocess-zookeeper zk-tmp))
         nimbus-tmp (local-temp-path)
+        log-dir-tmp (local-temp-path)
         daemon-conf (merge (read-storm-config)
                            {TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS true
                             ZMQ-LINGER-MILLIS 0
@@ -147,11 +148,14 @@
                             TOPOLOGY-TRIDENT-BATCH-EMIT-INTERVAL-MILLIS 50
                             STORM-CLUSTER-MODE "local"
                             BLOBSTORE-SUPERUSER (System/getProperty "user.name")
-                            BLOBSTORE-DIR nimbus-tmp}
+                            BLOBSTORE-DIR nimbus-tmp
+                            TOPOLOGY-MIN-REPLICATION-COUNT 1}
                            (if-not (contains? daemon-conf STORM-ZOOKEEPER-SERVERS)
                              {STORM-ZOOKEEPER-PORT zk-port
                               STORM-ZOOKEEPER-SERVERS ["localhost"]})
                            daemon-conf)
+        ; this affects log directory as well as worker-artifacts, so need to specify temp directory
+        _ (System/setProperty "storm.log.dir" log-dir-tmp)
         port-counter (mk-counter supervisor-slot-port-min)
         nimbus (nimbus/service-handler
                 (assoc daemon-conf STORM-LOCAL-DIR nimbus-tmp)
@@ -164,7 +168,7 @@
                      :supervisors (atom [])
                      :state (mk-distributed-cluster-state daemon-conf)
                      :storm-cluster-state (mk-storm-cluster-state daemon-conf)
-                     :tmp-dirs (atom [nimbus-tmp zk-tmp])
+                     :tmp-dirs (atom [nimbus-tmp zk-tmp log-dir-tmp])
                      :zookeeper (if (not-nil? zk-handle) zk-handle)
                      :shared-context context
                      :nimbus-thrift-server nimbus-thrift-server}
