@@ -956,6 +956,20 @@ public class Config extends HashMap<String, Object> {
     public static final String UI_HTTP_X_FRAME_OPTIONS = "ui.http.x-frame-options";
 
     /**
+     * A comma separated string of origins that are allowed for cross origin requests (CORS).
+     * The default is to allow all.
+     */
+    @isString
+    public static final String UI_CORS_ALLOWED_ORIGINS = "ui.cors.allowed.origins";
+
+    /**
+     * A comma separated string of HTTP methods that are allowed when making cross origin requests (CORS).
+     * The default is to allow "GET, POST, PUT"
+     */
+    @isString
+    public static final String UI_CORS_ALLOWED_METHODS = "ui.cors.allowed.methods";
+
+    /**
      * The hosts that Pacemaker is running on.
      */
     @isStringList
