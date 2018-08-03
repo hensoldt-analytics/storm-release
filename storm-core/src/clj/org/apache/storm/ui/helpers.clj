@@ -167,13 +167,16 @@
                                             ts-path ts-password ts-type need-client-auth want-client-auth))))
 
 (defn cors-filter-handler
-  []
-  (doto (org.eclipse.jetty.servlet.FilterHolder. (CrossOriginFilter.))
-    (.setInitParameter CrossOriginFilter/ALLOWED_ORIGINS_PARAM "*")
-    (.setInitParameter CrossOriginFilter/ALLOWED_METHODS_PARAM "GET, POST, PUT")
-    (.setInitParameter CrossOriginFilter/ALLOWED_HEADERS_PARAM "X-Requested-With, X-Requested-By, Access-Control-Allow-Origin, Content-Type, Content-Length, Accept, Origin")
-    (.setInitParameter CrossOriginFilter/ACCESS_CONTROL_ALLOW_ORIGIN_HEADER "*")
-    ))
+  [conf]
+  (let [allowed-origins (conf UI-CORS-ALLOWED-ORIGINS)
+        allowed-methods (conf UI-CORS-ALLOWED-METHODS)
+        cors-allowed-origins (if (not-nil? allowed-origins) allowed-origins "*")
+        cors-allowed-methods (if (not-nil? allowed-methods) allowed-methods "GET, POST, PUT")]
+    (doto (org.eclipse.jetty.servlet.FilterHolder. (CrossOriginFilter.))
+      (.setInitParameter CrossOriginFilter/ALLOWED_ORIGINS_PARAM cors-allowed-origins)
+      (.setInitParameter CrossOriginFilter/ALLOWED_METHODS_PARAM cors-allowed-methods)
+      (.setInitParameter CrossOriginFilter/ALLOWED_HEADERS_PARAM "X-Requested-With, X-Requested-By, Access-Control-Allow-Origin, Content-Type, Content-Length, Accept, Origin")
+      (.setInitParameter CrossOriginFilter/ACCESS_CONTROL_ALLOW_ORIGIN_HEADER "*"))))
 
 (defn validate-x-frame-options!
   [x-frame-options]
@@ -199,13 +202,13 @@
   (org.eclipse.jetty.servlet.FilterHolder. (AccessLoggingFilter.)))
 
 (defn config-filter 
-([server handler filters-conf] (config-filter server handler filters-conf nil))
-  ([server handler filters-confs http-x-frame-options](if filters-confs
+([conf server handler filters-conf] (config-filter conf server handler filters-conf nil))
+  ([conf server handler filters-confs http-x-frame-options](if filters-confs
     (let [servlet-holder (ServletHolder.
                            (ring.util.servlet/servlet handler))
           context (doto (org.eclipse.jetty.servlet.ServletContextHandler. server "/")
                     (.addServlet servlet-holder "/"))]
-      (.addFilter context (cors-filter-handler) "/*" (EnumSet/allOf DispatcherType))
+      (.addFilter context (cors-filter-handler conf) "/*" (EnumSet/allOf DispatcherType))
       (if-not (blank? http-x-frame-options)
         (.addFilter context (x-frame-options-filter-handler http-x-frame-options) "/*" FilterMapping/ALL))
       (doseq [{:keys [filter-name filter-class filter-params]} filters-confs]

@@ -1432,9 +1432,6 @@
 
 (def app
   (handler/site (-> main-routes
-                    (wrap-cors :access-control-allow-origin [#".*"]
-                               :access-control-allow-headers :any
-                               :access-control-allow-methods [:get :put :post :delete])
                     (wrap-json-params)
                     (wrap-multipart-params)
                     (wrap-reload '[org.apache.storm.ui.core])
@@ -1478,7 +1475,7 @@
                                                     https-want-client-auth)
                                         (doseq [connector (.getConnectors server)]
                                           (.setRequestHeaderSize connector header-buffer-size))
-                                        (config-filter server app filters-confs http-x-frame-options))}))
+                                        (config-filter conf server app filters-confs http-x-frame-options))}))
    (catch Exception ex
      (log-error ex))))
 
