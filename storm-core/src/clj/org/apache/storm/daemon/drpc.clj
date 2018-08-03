@@ -268,7 +268,7 @@
                                         https-ts-type
                                         https-need-client-auth
                                         https-want-client-auth)
-                            (config-filter server app filters-confs))})))
+                            (config-filter conf server app filters-confs))})))
       (start-metrics-reporters conf)
       (when handler-server
         (.serve handler-server)))))

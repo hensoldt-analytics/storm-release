@@ -397,6 +397,7 @@ public class Config extends HashMap<String, Object> {
      * A string representing the payload for topology Zookeeper authentication. It gets serialized using UTF-8 encoding during authentication.
      */
     @isString
+    @Password
     public static final String STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD="storm.zookeeper.topology.auth.payload";
 
     /*
@@ -797,6 +798,7 @@ public class Config extends HashMap<String, Object> {
      * Password for the keystore for HTTPS for Storm Logviewer
      */
     @isString
+    @Password
     public static final String LOGVIEWER_HTTPS_KEYSTORE_PASSWORD = "logviewer.https.keystore.password";
 
     /**
@@ -810,6 +812,7 @@ public class Config extends HashMap<String, Object> {
      * Password to the private key in the keystore for setting up HTTPS (SSL).
      */
     @isString
+    @Password
     public static final String LOGVIEWER_HTTPS_KEY_PASSWORD = "logviewer.https.key.password";
 
     /**
@@ -822,6 +825,7 @@ public class Config extends HashMap<String, Object> {
      * Password for the truststore for HTTPS for Storm Logviewer
      */
     @isString
+    @Password
     public static final String LOGVIEWER_HTTPS_TRUSTSTORE_PASSWORD = "logviewer.https.truststore.password";
 
     /**
@@ -900,6 +904,7 @@ public class Config extends HashMap<String, Object> {
      * Password to the keystore used by Storm UI for setting up HTTPS (SSL).
      */
     @isString
+    @Password
     public static final String UI_HTTPS_KEYSTORE_PASSWORD = "ui.https.keystore.password";
 
     /**
@@ -913,6 +918,7 @@ public class Config extends HashMap<String, Object> {
      * Password to the private key in the keystore for setting up HTTPS (SSL).
      */
     @isString
+    @Password
     public static final String UI_HTTPS_KEY_PASSWORD = "ui.https.key.password";
 
     /**
@@ -925,6 +931,7 @@ public class Config extends HashMap<String, Object> {
      * Password to the truststore used by Storm UI setting up HTTPS (SSL).
      */
     @isString
+    @Password
     public static final String UI_HTTPS_TRUSTSTORE_PASSWORD = "ui.https.truststore.password";
 
     /**
@@ -948,6 +955,20 @@ public class Config extends HashMap<String, Object> {
      */
     @isString
     public static final String UI_HTTP_X_FRAME_OPTIONS = "ui.http.x-frame-options";
+
+    /**
+     * A comma separated string of origins that are allowed for cross origin requests (CORS).
+     * The default is to allow all.
+     */
+    @isString
+    public static final String UI_CORS_ALLOWED_ORIGINS = "ui.cors.allowed.origins";
+
+    /**
+     * A comma separated string of HTTP methods that are allowed when making cross origin requests (CORS).
+     * The default is to allow "GET, POST, PUT"
+     */
+    @isString
+    public static final String UI_CORS_ALLOWED_METHODS = "ui.cors.allowed.methods";
 
     /**
      * The hosts that Pacemaker is running on.
@@ -1026,6 +1047,7 @@ public class Config extends HashMap<String, Object> {
      * Password to the keystore used by Storm DRPC for setting up HTTPS (SSL).
      */
     @isString
+    @Password
     public static final String DRPC_HTTPS_KEYSTORE_PASSWORD = "drpc.https.keystore.password";
 
     /**
@@ -1039,6 +1061,7 @@ public class Config extends HashMap<String, Object> {
      * Password to the private key in the keystore for setting up HTTPS (SSL).
      */
     @isString
+    @Password
     public static final String DRPC_HTTPS_KEY_PASSWORD = "drpc.https.key.password";
 
     /**
@@ -1051,6 +1074,7 @@ public class Config extends HashMap<String, Object> {
      * Password to the truststore used by Storm DRPC setting up HTTPS (SSL).
      */
     @isString
+    @Password
     public static final String DRPC_HTTPS_TRUSTSTORE_PASSWORD = "drpc.https.truststore.password";
 
     /**
