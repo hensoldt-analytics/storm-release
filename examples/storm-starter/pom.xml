@@ -109,6 +109,12 @@
       <groupId>org.apache.storm</groupId>
       <artifactId>storm-metrics</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.fusesource</groupId>
+          <artifactId>sigar</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
