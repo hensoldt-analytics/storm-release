@@ -18,13 +18,6 @@
 
 package org.apache.storm.kafka.spout;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
-import org.apache.storm.tuple.Fields;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
@@ -36,11 +29,22 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.storm.Config;
+import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
+import org.apache.storm.tuple.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * KafkaSpoutConfig defines the required configuration to connect a consumer to a consumer group, as well as the subscribing topics
  */
 public class KafkaSpoutConfig<K, V> implements Serializable {
 
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaSpoutConfig.class);
     private static final long serialVersionUID = 141902646130682494L;
     // 200ms
     public static final long DEFAULT_POLL_TIMEOUT_MS = 200;
@@ -52,10 +56,19 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public static final int DEFAULT_MAX_UNCOMMITTED_OFFSETS = 10_000_000;
     // 2s
     public static final long DEFAULT_PARTITION_REFRESH_PERIOD_MS = 2_000;
+
     public static final FirstPollOffsetStrategy DEFAULT_FIRST_POLL_OFFSET_STRATEGY = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
+
     public static final KafkaSpoutRetryService DEFAULT_RETRY_SERVICE =
         new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.milliSeconds(2),
             DEFAULT_MAX_RETRIES, TimeInterval.seconds(10));
+
+    public static final ProcessingGuarantee DEFAULT_PROCESSING_GUARANTEE = ProcessingGuarantee.AT_LEAST_ONCE;
+
+    public static final KafkaTupleListener DEFAULT_TUPLE_LISTENER = new EmptyKafkaTupleListener();
+
+    public static final int DEFAULT_METRICS_TIME_BUCKET_SIZE_SECONDS = 60;
+
 
     // Kafka consumer configuration
     private final Map<String, Object> kafkaProps;
@@ -68,12 +81,16 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     private final int maxUncommittedOffsets;
     private final FirstPollOffsetStrategy firstPollOffsetStrategy;
     private final KafkaSpoutRetryService retryService;
+    private final KafkaTupleListener tupleListener;
     private final long partitionRefreshPeriodMs;
     private final boolean emitNullTuples;
     private final SerializableDeserializer<K> keyDes;
     private final Class<? extends Deserializer<K>> keyDesClazz;
     private final SerializableDeserializer<V> valueDes;
     private final Class<? extends Deserializer<V>> valueDesClazz;
+    private final ProcessingGuarantee processingGuarantee;
+    private final boolean tupleTrackingEnforced;
+    private final int metricsTimeBucketSizeInSecs;
 
     /**
      * Creates a new KafkaSpoutConfig using a Builder.
@@ -81,7 +98,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
      * @param builder The Builder to construct the KafkaSpoutConfig from
      */
     public KafkaSpoutConfig(Builder<K, V> builder) {
-        this.kafkaProps = setDefaultsAndGetKafkaProps(builder.kafkaProps);
+        setKafkaPropsForProcessingGuarantee(builder);
+        this.kafkaProps = builder.kafkaProps;
         this.subscription = builder.subscription;
         this.translator = builder.translator;
         this.pollTimeoutMs = builder.pollTimeoutMs;
@@ -89,35 +107,73 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
         this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
         this.retryService = builder.retryService;
+        this.tupleListener = builder.tupleListener;
         this.partitionRefreshPeriodMs = builder.partitionRefreshPeriodMs;
         this.emitNullTuples = builder.emitNullTuples;
         this.keyDes = builder.keyDes;
         this.keyDesClazz = builder.keyDesClazz;
         this.valueDes = builder.valueDes;
         this.valueDesClazz = builder.valueDesClazz;
+        this.processingGuarantee = builder.processingGuarantee;
+        this.tupleTrackingEnforced = builder.tupleTrackingEnforced;
+        this.metricsTimeBucketSizeInSecs = builder.metricsTimeBucketSizeInSecs;
     }
 
     /**
-     * The offset used by the Kafka spout in the first poll to Kafka broker. The choice of this parameter will affect the number of consumer
-     * records returned in the first poll. By default this parameter is set to UNCOMMITTED_EARLIEST. <br/><br/>
-     * The allowed values are EARLIEST, LATEST, UNCOMMITTED_EARLIEST, UNCOMMITTED_LATEST. <br/>
-     * <ul>
-     * <li>EARLIEST means that the kafka spout polls records starting in the first offset of the partition, regardless of previous
-     * commits</li>
-     * <li>LATEST means that the kafka spout polls records with offsets greater than the last offset in the partition, regardless of
-     * previous commits</li>
-     * <li>UNCOMMITTED_EARLIEST means that the kafka spout polls records from the last committed offset, if any. If no offset has been
-     * committed, it behaves as EARLIEST.</li>
-     * <li>UNCOMMITTED_LATEST means that the kafka spout polls records from the last committed offset, if any. If no offset has been
-     * committed, it behaves as LATEST.</li>
-     * </ul>
-     *
+     * Defines how the {@link KafkaSpout} seeks the offset to be used in the first poll to Kafka upon topology deployment.
+     * By default this parameter is set to UNCOMMITTED_EARLIEST. 
      */
-    public static enum FirstPollOffsetStrategy {
+    public enum FirstPollOffsetStrategy {
+        /**
+         * The kafka spout polls records starting in the first offset of the partition, regardless of previous commits. This setting only
+         * takes effect on topology deployment
+         */
         EARLIEST,
+        /**
+         * The kafka spout polls records with offsets greater than the last offset in the partition, regardless of previous commits. This
+         * setting only takes effect on topology deployment
+         */
         LATEST,
+        /**
+         * The kafka spout polls records from the last committed offset, if any. If no offset has been committed it behaves as EARLIEST
+         */
         UNCOMMITTED_EARLIEST,
-        UNCOMMITTED_LATEST
+        /**
+         * The kafka spout polls records from the last committed offset, if any. If no offset has been committed it behaves as LATEST
+         */
+        UNCOMMITTED_LATEST;
+
+        @Override
+        public String toString() {
+            return "FirstPollOffsetStrategy{" + super.toString() + "}";
+        }
+    }
+
+    /**
+     * This enum controls when the tuple with the {@link ConsumerRecord} for an offset is marked as processed,
+     * i.e. when the offset can be committed to Kafka. The default value is AT_LEAST_ONCE.
+     * The commit interval is controlled by {@link KafkaSpoutConfig#getOffsetsCommitPeriodMs() }, if the mode commits on an interval.
+     * NO_GUARANTEE may be removed in a later release without warning, we're still evaluating whether it makes sense to keep.
+     */
+    public enum ProcessingGuarantee {
+        /**
+         * An offset is ready to commit only after the corresponding tuple has been processed and acked (at least once). If a tuple fails or
+         * times out it will be re-emitted, as controlled by the {@link KafkaSpoutRetryService}. Commits synchronously on the defined
+         * interval.
+         */
+        AT_LEAST_ONCE,
+        /**
+         * Every offset will be synchronously committed to Kafka right after being polled but before being emitted to the downstream
+         * components of the topology. The commit interval is ignored. This mode guarantees that the offset is processed at most once by
+         * ensuring the spout won't retry tuples that fail or time out after the commit to Kafka has been done
+         */
+        AT_MOST_ONCE,
+        /**
+         * The polled offsets are ready to commit immediately after being polled. The offsets are committed periodically, i.e. a message may
+         * be processed 0, 1 or more times. This behavior is similar to setting enable.auto.commit=true in the consumer, but allows the
+         * spout to control when commits occur. Commits asynchronously on the defined interval.
+         */
+        NO_GUARANTEE,
     }
 
     public static class Builder<K, V> {
@@ -134,8 +190,12 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private FirstPollOffsetStrategy firstPollOffsetStrategy = DEFAULT_FIRST_POLL_OFFSET_STRATEGY;
         private int maxUncommittedOffsets = DEFAULT_MAX_UNCOMMITTED_OFFSETS;
         private KafkaSpoutRetryService retryService = DEFAULT_RETRY_SERVICE;
+        private KafkaTupleListener tupleListener = DEFAULT_TUPLE_LISTENER;
         private long partitionRefreshPeriodMs = DEFAULT_PARTITION_REFRESH_PERIOD_MS;
         private boolean emitNullTuples = false;
+        private ProcessingGuarantee processingGuarantee = DEFAULT_PROCESSING_GUARANTEE;
+        private boolean tupleTrackingEnforced = false;
+        private int metricsTimeBucketSizeInSecs = DEFAULT_METRICS_TIME_BUCKET_SIZE_SECONDS;
 
         public Builder(String bootstrapServers, String... topics) {
             this(bootstrapServers, (SerializableDeserializer) null, (SerializableDeserializer) null, new ManualPartitionSubscription(new RoundRobinManualPartitioner(), new NamedTopicFilter(topics)));
@@ -234,37 +294,63 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
 
         private Builder(String bootstrapServers, SerializableDeserializer<K> keyDes, Class<? extends Deserializer<K>> keyDesClazz,
             SerializableDeserializer<V> valDes, Class<? extends Deserializer<V>> valDesClazz, Subscription subscription) {
-            kafkaProps = new HashMap<>();
+
+            this(keyDes, keyDesClazz, valDes, valDesClazz, subscription,
+                    new DefaultRecordTranslator<K, V>(), new HashMap<String, Object>());
+
             if (bootstrapServers == null || bootstrapServers.isEmpty()) {
                 throw new IllegalArgumentException("bootstrap servers cannot be null");
             }
             kafkaProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-            this.keyDes = keyDes;
-            this.keyDesClazz = keyDesClazz;
-            this.valueDes = valDes;
-            this.valueDesClazz = valDesClazz;
-            this.subscription = subscription;
-            this.translator = new DefaultRecordTranslator<>();
+            setNonNullSerDeKafkaProp(keyDes, keyDesClazz, valueDes, valueDesClazz);
         }
 
-        private Builder(Builder<?, ?> builder, SerializableDeserializer<K> keyDes, Class<? extends Deserializer<K>> keyDesClazz,
-            SerializableDeserializer<V> valueDes, Class<? extends Deserializer<V>> valueDesClazz) {
-            this.kafkaProps = new HashMap<>(builder.kafkaProps);
-            this.subscription = builder.subscription;
+        /**
+         * This constructor will always be called by one of the methods {@code setKey} or {@code setVal}, which implies
+         * that only one of its SerDe parameters will be non null, for which the corresponding Kafka property will be set
+         */
+        @SuppressWarnings("unchecked")
+        private Builder(final Builder<?, ?> builder, SerializableDeserializer<K> keyDes, Class<? extends Deserializer<K>> keyDesClazz,
+                        SerializableDeserializer<V> valueDes, Class<? extends Deserializer<V>> valueDesClazz) {
+
+            this(keyDes, keyDesClazz, valueDes, valueDesClazz, builder.subscription,
+                    (RecordTranslator<K, V>) builder.translator, new HashMap<>(builder.kafkaProps));
+
             this.pollTimeoutMs = builder.pollTimeoutMs;
             this.offsetCommitPeriodMs = builder.offsetCommitPeriodMs;
             this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
             this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
-            //this could result in a lot of class case exceptions at runtime,
-            // but because some translators will work no matter what the generics
-            // are I thought it best not to force someone to reset the translator
-            // when they change the key/value types.
-            this.translator = (RecordTranslator<K, V>) builder.translator;
             this.retryService = builder.retryService;
+
+            setNonNullSerDeKafkaProp(keyDes, keyDesClazz, valueDes, valueDesClazz);
+        }
+
+        private Builder(SerializableDeserializer<K> keyDes, Class<? extends Deserializer<K>> keyDesClazz,
+               SerializableDeserializer<V> valueDes, Class<? extends Deserializer<V>> valueDesClazz,
+               Subscription subscription, RecordTranslator<K, V> translator, Map<String, Object> kafkaProps) {
             this.keyDes = keyDes;
             this.keyDesClazz = keyDesClazz;
             this.valueDes = valueDes;
             this.valueDesClazz = valueDesClazz;
+            this.subscription = subscription;
+            this.translator = translator;
+            this.kafkaProps = kafkaProps;
+        }
+
+        private void setNonNullSerDeKafkaProp(SerializableDeserializer<K> keyDes, Class<? extends Deserializer<K>> keyDesClazz,
+                SerializableDeserializer<V> valueDes, Class<? extends Deserializer<V>> valueDesClazz) {
+            if (keyDesClazz != null) {
+                kafkaProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, keyDesClazz);
+            }
+            if (keyDes != null) {
+                kafkaProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, keyDes.getClass());
+            }
+            if (valueDesClazz != null) {
+                kafkaProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, valueDesClazz);
+            }
+            if (valueDes != null) {
+                kafkaProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, valueDes.getClass());
+            }
         }
 
         /**
@@ -275,7 +361,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
          */
         @Deprecated
         public <NK> Builder<NK, V> setKey(SerializableDeserializer<NK> keyDeserializer) {
-            return new Builder<>(this, keyDeserializer, null, valueDes, valueDesClazz);
+            return new Builder<>(this, keyDeserializer, null, null, null);
         }
 
         /**
@@ -286,7 +372,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
          */
         @Deprecated
         public <NK> Builder<NK, V> setKey(Class<? extends Deserializer<NK>> clazz) {
-            return new Builder<>(this, null, clazz, valueDes, valueDesClazz);
+            return new Builder<>(this, null, clazz, null, null);
         }
 
         /**
@@ -297,7 +383,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
          */
         @Deprecated
         public <NV> Builder<K, NV> setValue(SerializableDeserializer<NV> valueDeserializer) {
-            return new Builder<>(this, keyDes, keyDesClazz, valueDeserializer, null);
+            return new Builder<>(this, null, null, valueDeserializer, null);
         }
 
         /**
@@ -308,7 +394,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
          */
         @Deprecated
         public <NV> Builder<K, NV> setValue(Class<? extends Deserializer<NV>> clazz) {
-            return new Builder<>(this, keyDes, keyDesClazz, null, clazz);
+            return new Builder<>(this, null, null, null, clazz);
         }
 
         /**
@@ -450,6 +536,9 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         /**
          * Specifies the period, in milliseconds, the offset commit task is periodically called. Default is 15s.
          *
+         * <p>This setting only has an effect if the configured {@link ProcessingGuarantee} is {@link ProcessingGuarantee#AT_LEAST_ONCE} or
+         * {@link ProcessingGuarantee#NO_GUARANTEE}.
+         *
          * @param offsetCommitPeriodMs time in ms
          */
         public Builder<K, V> setOffsetCommitPeriodMs(long offsetCommitPeriodMs) {
@@ -458,10 +547,13 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         }
 
         /**
-         * Defines the max number of polled offsets (records) that can be pending commit, before another poll can take place. Once this
-         * limit is reached, no more offsets (records) can be polled until the next successful commit(s) sets the number of pending offsets
-         * below the threshold. The default is {@link #DEFAULT_MAX_UNCOMMITTED_OFFSETS}. Note that this limit can in some cases be exceeded,
-         * but no partition will exceed this limit by more than maxPollRecords - 1.
+         * Defines the max number of polled offsets (records) that can be pending commit, before another poll can take place.
+         * Once this limit is reached, no more offsets (records) can be polled until the next successful commit(s) sets the number
+         * of pending offsets below the threshold. The default is {@link #DEFAULT_MAX_UNCOMMITTED_OFFSETS}.
+         * This limit is per partition and may in some cases be exceeded,
+         * but each partition cannot exceed this limit by more than maxPollRecords - 1.
+         * 
+         * <p>This setting only has an effect if the configured {@link ProcessingGuarantee} is {@link ProcessingGuarantee#AT_LEAST_ONCE}.
          *
          * @param maxUncommittedOffsets max number of records that can be be pending commit
          */
@@ -484,6 +576,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         /**
          * Sets the retry service for the spout to use.
          *
+         * <p>This setting only has an effect if the configured {@link ProcessingGuarantee} is {@link ProcessingGuarantee#AT_LEAST_ONCE}.
+         *
          * @param retryService the new retry service
          * @return the builder (this).
          */
@@ -492,6 +586,20 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                 throw new NullPointerException("retryService cannot be null");
             }
             this.retryService = retryService;
+            return this;
+        }
+
+        /**
+         * Sets the tuple listener for the spout to use.
+         *
+         * @param tupleListener the tuple listener
+         * @return the builder (this).
+         */
+        public Builder<K, V> setTupleListener(KafkaTupleListener tupleListener) {
+            if (tupleListener == null) {
+                throw new NullPointerException("KafkaTupleListener cannot be null");
+            }
+            this.tupleListener = tupleListener;
             return this;
         }
 
@@ -547,6 +655,41 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             return this;
         }
 
+        /**
+         * Specifies which processing guarantee the spout should offer. Refer to the documentation for {@link ProcessingGuarantee}.
+         *
+         * @param processingGuarantee The processing guarantee the spout should offer.
+         */
+        public Builder<K, V> setProcessingGuarantee(ProcessingGuarantee processingGuarantee) {
+            this.processingGuarantee = processingGuarantee;
+            return this;
+        }
+
+        /**
+         * Specifies whether the spout should require Storm to track emitted tuples when using a {@link ProcessingGuarantee} other than
+         * {@link ProcessingGuarantee#AT_LEAST_ONCE}. The spout will always track emitted tuples when offering at-least-once guarantees
+         * regardless of this setting. This setting is false by default.
+         *
+         * <p>Enabling tracking can be useful even in cases where reliability is not a concern, because it allows
+         * {@link Config#TOPOLOGY_MAX_SPOUT_PENDING} to have an effect, and enables some spout metrics (e.g. complete-latency) that would
+         * otherwise be disabled.
+         *
+         * @param tupleTrackingEnforced true if Storm should track emitted tuples, false otherwise
+         */
+        public Builder<K, V> setTupleTrackingEnforced(boolean tupleTrackingEnforced) {
+            this.tupleTrackingEnforced = tupleTrackingEnforced;
+            return this;
+        }
+
+        /**
+         * The time period that metrics data in bucketed into.
+         * @param metricsTimeBucketSizeInSecs time in seconds
+         */
+        public Builder<K, V> setMetricsTimeBucketSizeInSecs(int metricsTimeBucketSizeInSecs) {
+            this.metricsTimeBucketSizeInSecs = metricsTimeBucketSizeInSecs;
+            return this;
+        }
+
         public KafkaSpoutConfig<K, V> build() {
             return new KafkaSpoutConfig<>(this);
         }
@@ -560,7 +703,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
      * @return The new builder
      */
     public static Builder<String, String> builder(String bootstrapServers, String... topics) {
-        return setStringDeserializers(new Builder<String, String>(bootstrapServers, topics));
+        return setStringDeserializers(new Builder<String, String>(bootstrapServers, StringDeserializer.class, StringDeserializer.class, topics));
     }
 
     /**
@@ -571,7 +714,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
      * @return The new builder
      */
     public static Builder<String, String> builder(String bootstrapServers, Collection<String> topics) {
-        return setStringDeserializers(new Builder<String, String>(bootstrapServers, topics));
+        return setStringDeserializers(new Builder<String, String>(bootstrapServers, StringDeserializer.class, StringDeserializer.class, topics));
     }
 
     /**
@@ -582,7 +725,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
      * @return The new builder
      */
     public static Builder<String, String> builder(String bootstrapServers, Pattern topics) {
-        return setStringDeserializers(new Builder<String, String>(bootstrapServers, topics));
+        return setStringDeserializers(new Builder<String, String>(bootstrapServers, StringDeserializer.class, StringDeserializer.class, topics));
     }
 
     private static Builder<String, String> setStringDeserializers(Builder<String, String> builder) {
@@ -591,12 +734,45 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         return builder;
     }
 
-    private static Map<String, Object> setDefaultsAndGetKafkaProps(Map<String, Object> kafkaProps) {
-        // set defaults for properties not specified
-        if (!kafkaProps.containsKey(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG)) {
-            kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+    private static void setKafkaPropsForProcessingGuarantee(Builder<?, ?> builder) {
+        if (builder.kafkaProps.containsKey(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG)) {
+            LOG.warn("The KafkaConsumer " + ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG
+                + " setting is not supported. You can configure similar behavior through KafkaSpoutConfig.Builder.setProcessingGuarantee."
+                + "This will be treated as an error in the next major release.");
+
+            final boolean enableAutoCommit = Boolean.parseBoolean(builder.kafkaProps.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG).toString());
+            if (enableAutoCommit) {
+                builder.processingGuarantee = ProcessingGuarantee.NO_GUARANTEE;
+            } else {
+                builder.processingGuarantee = ProcessingGuarantee.AT_LEAST_ONCE;
+            }
         }
-        return kafkaProps;
+        String autoOffsetResetPolicy = (String) builder.kafkaProps.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG);
+        if (builder.processingGuarantee == ProcessingGuarantee.AT_LEAST_ONCE) {
+            if (autoOffsetResetPolicy == null) {
+                /*
+                 * If the user wants to explicitly set an auto offset reset policy, we should respect it, but when the spout is configured
+                 * for at-least-once processing we should default to seeking to the earliest offset in case there's an offset out of range
+                 * error, rather than seeking to the latest (Kafka's default). This type of error will typically happen when the consumer
+                 * requests an offset that was deleted.
+                 */
+                LOG.info("Setting Kafka consumer property '{}' to 'earliest' to ensure at-least-once processing",
+                    ConsumerConfig.AUTO_OFFSET_RESET_CONFIG);
+                builder.kafkaProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+            } else if (!autoOffsetResetPolicy.equals("earliest") && !autoOffsetResetPolicy.equals("none")) {
+                LOG.warn("Cannot guarantee at-least-once processing with auto.offset.reset.policy other than 'earliest' or 'none'."
+                    + " Some messages may be skipped.");
+            }
+        } else if (builder.processingGuarantee == ProcessingGuarantee.AT_MOST_ONCE) {
+            if (autoOffsetResetPolicy != null
+                && (!autoOffsetResetPolicy.equals("latest") && !autoOffsetResetPolicy.equals("none"))) {
+                LOG.warn("Cannot guarantee at-most-once processing with auto.offset.reset.policy other than 'latest' or 'none'."
+                    + " Some messages may be processed more than once.");
+            }
+        }
+        LOG.info("Setting Kafka consumer property '{}' to 'false', because the spout does not support auto-commit",
+            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG);
+        builder.kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
     }
 
     /**
@@ -654,9 +830,21 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         return offsetCommitPeriodMs;
     }
 
+    /**
+     * @deprecated Use {@link #getProcessingGuarantee()} instead.
+     */
+    @Deprecated
     public boolean isConsumerAutoCommitMode() {
         return kafkaProps.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG) == null // default is false
             || Boolean.valueOf((String) kafkaProps.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG));
+    }
+    
+    public ProcessingGuarantee getProcessingGuarantee() {
+        return processingGuarantee;
+    }
+
+    public boolean isTupleTrackingEnforced() {
+        return tupleTrackingEnforced;
     }
 
     public String getConsumerGroupId() {
@@ -675,12 +863,20 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         return retryService;
     }
 
+    public KafkaTupleListener getTupleListener() {
+        return tupleListener;
+    }
+
     public long getPartitionRefreshPeriodMs() {
         return partitionRefreshPeriodMs;
     }
 
     public boolean isEmitNullTuples() {
         return emitNullTuples;
+    }
+
+    public int getMetricsTimeBucketSizeInSecs() {
+        return metricsTimeBucketSizeInSecs;
     }
 
     @Override
@@ -696,6 +892,9 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             + ", subscription=" + subscription
             + ", translator=" + translator
             + ", retryService=" + retryService
+            + ", tupleListener=" + tupleListener
+            + ", processingGuarantee=" + processingGuarantee
+            + ", metricsTimeBucketSizeInSecs=" + metricsTimeBucketSizeInSecs
             + '}';
     }
 }
