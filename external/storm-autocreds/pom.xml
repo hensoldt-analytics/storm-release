@@ -115,6 +115,10 @@
                     <groupId>com.google.code.findbugs</groupId>
                     <artifactId>jsr305</artifactId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>jsp-api</artifactId>
+                    <groupId>javax.servlet.jsp</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
