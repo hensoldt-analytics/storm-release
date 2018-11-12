@@ -19,6 +19,18 @@
 package org.apache.storm.utils;
 
 import org.apache.storm.Config;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.ComponentObject;
 import org.apache.storm.generated.SpoutSpec;
@@ -40,6 +52,13 @@ public class TopologySpoutLag {
     private static final String SPOUT_TYPE= "spoutType";
     private static final String SPOUT_LAG_RESULT = "spoutLagResult";
     private static final String ERROR_INFO = "errorInfo";
+    private static final String CONFIG_KEY_PREFIX = "config.";
+    private static final String TOPICS_CONFIG = CONFIG_KEY_PREFIX + "topics";
+    private static final String GROUPID_CONFIG = CONFIG_KEY_PREFIX + "groupid";
+    private static final String BOOTSTRAP_CONFIG = CONFIG_KEY_PREFIX + "bootstrap.servers";
+    private static final String SECURITY_PROTOCOL_CONFIG = CONFIG_KEY_PREFIX + "security.protocol";
+    private static final Set<String> ALL_CONFIGS = new HashSet<>(Arrays.asList(TOPICS_CONFIG, GROUPID_CONFIG,
+            BOOTSTRAP_CONFIG, SECURITY_PROTOCOL_CONFIG));
     private final static Logger logger = LoggerFactory.getLogger(TopologySpoutLag.class);
 
     public static Map<String, Map<String, Object>> lag (StormTopology stormTopology, Map topologyConf) {
@@ -91,7 +110,8 @@ public class TopologySpoutLag {
         commands.add((String)jsonConf.get(configKeyPrefix + "groupid"));
         commands.add("-b");
         commands.add((String)jsonConf.get(configKeyPrefix + "bootstrap.servers"));
-        String securityProtocol = (String)jsonConf.get(configKeyPrefix + "security.protocol");
+        commands.add((String) jsonConf.get(BOOTSTRAP_CONFIG));
+        String securityProtocol = (String) jsonConf.get(SECURITY_PROTOCOL_CONFIG);
         if (securityProtocol != null && !securityProtocol.isEmpty()) {
             commands.add("-s");
             commands.add(securityProtocol);
@@ -141,6 +161,30 @@ public class TopologySpoutLag {
         return commands;
     }
 
+    private static File getExtraPropertiesFile(Map<String, Object> jsonConf) {
+        File file = null;
+        Map<String, String> extraProperties = new HashMap<>();
+        for (Map.Entry<String, Object> conf: jsonConf.entrySet()) {
+            if (conf.getKey().startsWith(CONFIG_KEY_PREFIX) && !ALL_CONFIGS.contains(conf.getKey())) {
+                extraProperties.put(conf.getKey().substring(CONFIG_KEY_PREFIX.length()), conf.getValue().toString());
+            }
+        }
+        if (!extraProperties.isEmpty()) {
+            try {
+                file = File.createTempFile("kafka-consumer-extra", "props");
+                file.deleteOnExit();
+                Properties properties = new Properties();
+                properties.putAll(extraProperties);
+                try(FileOutputStream fos = new FileOutputStream(file)) {
+                    properties.store(fos, "Kafka consumer extra properties");
+                }
+            } catch (IOException ex) {
+                // ignore
+            }
+        }
+        return file;
+    }
+
     private static Map<String, Object> getLagResultForKafka (String spoutId, SpoutSpec spoutSpec, Map topologyConf, boolean old) throws IOException {
         ComponentCommon componentCommon = spoutSpec.get_common();
         String json = componentCommon.get_json_conf();
@@ -161,18 +205,31 @@ public class TopologySpoutLag {
             }
             commands.addAll(old ? getCommandLineOptionsForOldKafkaSpout(jsonMap, topologyConf) : getCommandLineOptionsForNewKafkaSpout(jsonMap));
 
+
+            File extraPropertiesFile = getExtraPropertiesFile(jsonMap);
+            if (extraPropertiesFile != null) {
+                commands.add("-c");
+                commands.add(extraPropertiesFile.getAbsolutePath());
+            }
+
             logger.debug("Command to run: {}", commands);
 
             // if commands contains one or more null value, spout is compiled with lower version of storm-kafka / storm-kafka-client
             if (!commands.contains(null)) {
-                String resultFromMonitor = ShellUtils.execCommand(commands.toArray(new String[0]));
-
                 try {
-                    result = (Map<String, Object>) JSONValue.parseWithException(resultFromMonitor);
-                } catch (ParseException e) {
-                    logger.debug("JSON parsing failed, assuming message as error message: {}", resultFromMonitor);
-                    // json parsing fail -> error received
-                    errorMsg = resultFromMonitor;
+                    String resultFromMonitor = ShellUtils.execCommand(commands.toArray(new String[0]));
+
+                    try {
+                        result = (Map<String, Object>) JSONValue.parseWithException(resultFromMonitor);
+                    } catch (ParseException e) {
+                        logger.debug("JSON parsing failed, assuming message as error message: {}", resultFromMonitor);
+                        // json parsing fail -> error received
+                        errorMsg = resultFromMonitor;
+                    }
+                } finally {
+                    if (extraPropertiesFile != null) {
+                        extraPropertiesFile.delete();
+                    }
                 }
             }
         }
