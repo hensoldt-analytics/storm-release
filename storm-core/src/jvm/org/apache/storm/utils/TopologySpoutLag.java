@@ -161,7 +161,7 @@ public class TopologySpoutLag {
         return commands;
     }
 
-    private static File getExtraPropertiesFile(Map<String, Object> jsonConf) {
+    private static File createExtraPropertiesFile(Map<String, Object> jsonConf) {
         File file = null;
         Map<String, String> extraProperties = new HashMap<>();
         for (Map.Entry<String, Object> conf: jsonConf.entrySet()) {
@@ -206,7 +206,7 @@ public class TopologySpoutLag {
             commands.addAll(old ? getCommandLineOptionsForOldKafkaSpout(jsonMap, topologyConf) : getCommandLineOptionsForNewKafkaSpout(jsonMap));
 
 
-            File extraPropertiesFile = getExtraPropertiesFile(jsonMap);
+            File extraPropertiesFile = createExtraPropertiesFile(jsonMap);
             if (extraPropertiesFile != null) {
                 commands.add("-c");
                 commands.add(extraPropertiesFile.getAbsolutePath());
