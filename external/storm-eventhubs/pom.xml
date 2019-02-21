@@ -22,12 +22,12 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>1.1.1-SNAPSHOT</version>
+        <version>1.0.1.2.5.3.163-2</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>storm-eventhubs</artifactId>
-    <version>1.1.1-SNAPSHOT</version>
+    <version>1.0.1.2.5.3.163-2</version>
     <packaging>jar</packaging>
     <name>storm-eventhubs</name>
     <description>EventHubs Storm Spout</description>
