@@ -1,61 +1,44 @@
-Changes only in Hortonworks github and not in Apache Storm release 1.0.2
+Changes only in Hortonworks github and not in Apache Storm release 1.2.1
  * BUG-120513: Bump activemq version to 5.15.9
  * BUG-120514: update jackson version to 2.9.9
  * STORM-3123: add support for Kafka security config in storm-kafka-monitor
  * STORM-3046: Ensure KafkaTridentSpoutEmitter handles empty batches correctly
  * BUG-117987: Upgrade to thrift 0.12.0
  * BUG-118274: Upgrade jackson to 2.9.8
+ * BUG-114383: ignore client.jartransformer.class if the value (after stripping) is empty
+ * BUG-113011: fix leader-nimbus process is not able to come up when restarted
+ * BUG-111537: Exclude jsp-api 2.1 from storm-autocreds
+ * STORM-3026: Upgrade ZK instance for security
+ * BUG-106354: add config to filter 'Server:' HTTP header
+ * BUG-109517: Storm Service check fails due to TTransportException
+ * BUG-109163: Fix a few dependencies causing issues in black duck scan
+ * BUG-109159: exclude sigar from storm-starter
+ * BUG-109157: fix for CVE 2018-1332
+ * BUG-108203 In local mode, topology min replication count must be 1
+ * STORM-3052: Allow for blobs to be unzipped/untarred
+ * BUG-107549: exclude curator-client from storm-autocreds transitive dependency
+ * STORM-3110: Skip the user while checking isProcessAlive
+ * BUG-104149 Prevent supervisor crash when topology conf file doesn't exist in updateBlobsForTopology
  * BUG-104396: Include Google Connector in Storm
- * STORM-1839: Kinesis Spout
- * STORM-1694: Kafka Spout Trident Implementation Using New Kafka Consumer API
- * STORM-1960: Add CORS support to STORM UI Rest api
- * STORM-1959: Add missing license header to KafkaPartitionOffsetLag
- * STORM-1950: Change response json of "Topology Lag" REST API to keyed by spoutId, topic, partition.
- * STORM-1833: Simple equi-join in storm-sql standalone mode
- * STORM-1866: Update Resource Aware Scheduler Documentation
- * STORM-1930: Kafka New Client API - Support for Topic Wildcards
- * STORM-1924: Adding conf options for Persistent Word Count Topology
- * STORM-1956: Disabling Backpressure by default
- * STORM-1934: Fix race condition between sync-supervisor and sync-processes
- * STORM-1919: Introduce FilterBolt on storm-redis
- * STORM-1742: More accurate 'complete latency'
- * STORM-1945: Fix NPE bugs on topology spout lag for storm-kafka-monitor
- * STORM-1888: add description for shell command
- * STORM-1902: add a simple & flexible FileNameFormat for storm-hdfs
- * STORM-1914: Storm Kafka Field Topic Selector
- * STORM-1907: PartitionedTridentSpoutExecutor has incompatible types that cause ClassCastException
- * STORM-1925: Remove Nimbus thrift call from Nimbus itself
- * STORM-1909: Update HDFS spout documentation
- * STORM-1136: Command line module to return kafka spout offsets lag and display in storm ui
- * STORM-1911: IClusterMetricsConsumer should use seconds to timestamp unit
- * STORM-1849: HDFSFileTopology should use the 3rd argument as topologyName
- * STORM-1906: Window count/length of zero should be disallowed
- * STORM-1893: Support OpenTSDB for storing timeseries data.
- * STORM-1723: Introduce ClusterMetricsConsumer
- * STORM-1700: Introduce 'whitelist' / 'blacklist' option to MetricsConsumer
- * STORM-1698: Asynchronous MetricsConsumerBolt
- * STORM-1705: Cap number of retries for a failed message
- * STORM-1884: Prioritize pendingPrepare over pendingCommit
- * STORM-1575: fix TwitterSampleSpout NPE on close
- * STORM-1874: Update logger private permissions
- * STORM-1865: update command line client document
- * STORM-1771: HiveState should flushAndClose before closing old or idle Hive connections
- * STORM-1882: Expose TextFileReader public
- * STORM-1873: Implement alternative behaviour for late tuples
- * STORM-1719: Introduce REST API: Topology metric stats for stream
- * STORM-1887: Fixed help message for set_log_level command
- * STORM-1878: Flux can now handle IStatefulBolts
- * STORM-1864: StormSubmitter should throw respective exceptions and log respective errors forregistered submitter hook invocation
- * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
- * STORM-1859: Ack late tuples in windowed mode
- * STORM-1851: Fix default nimbus impersonation authorizer config
- * STORM-1848: Make KafkaMessageId and Partition serializable to support
- * STORM-1862: Flux ShellSpout and ShellBolt can't emit to named streams
- * Storm-1728: TransactionalTridentKafkaSpout error
- * STORM-1850: State Checkpointing Documentation update
- * STORM-1674: Idle KafkaSpout consumes more bandwidth than needed
- * STORM-1842: Forward references in storm.thrift cause tooling issues
- * STORM-1730: LocalCluster#shutdown() does not terminate all storm threads/thread pools.
- * STORM-1841: Address a few minor issues in windowing and doc
- * STORM-1709: Added group by support in storm sql standalone mode
- * STORM-1720: Support GEO in storm-redis
+ * BUG-103322 Upgrade HikariCP version to 2.4.7
+ * BUG-103251 Upgrade Disruptor version to 3.3.11
+ * BUG-100777: exclude commons-httpclient and httpclient
+ * BUG-100777: exclude log4-1.2.17 dependencies
+ * BUG-102698 Storm - Allow users to specify maven local repository directory
+ * BUG-102230 STORM-3039 handle slot ports in TIME_WAIT state
+ * BUG-100777: Fix some of the issues reported in blackduck scan
+ * BUG-100128: Exclude jersey dependencies from storm-autocreds
+ * BUG-99973 Decouple storm-hive UTs with Hive
+ * BUG-99706: Update the kafka version for storm-kafka-client to match the version used in HDF 3.1
+ * BUG-99706 - Update kafka_client version latest 0.1.0 build
+ * BUG-99227: Use unique names for TridentFile and TridentSequence spouts
+ * BUG-95923: storm-autocreds to support HDP 3.0 (hdfs, hbase, hive)
+ * BUG-98362: Storm HDFS bolt throws ClosedChannelException when Time rotation policy is used
+ * BUG-95921: Upgrade storm-hdfs to support HDFS 3.0
+ * BUG-97111: Update commons-fileupload version
+ * STORM-2911 add serialVersionUID to storm-kafka SpoutConfig
+ * STORM-2896: Add tool to help users migrate offsets from storm-kafka to storm-kafka-client
+ * STORM-2952: Deprecate storm-kafka
+ * BUG-97011: exclude avro jar from storm-autocreds
+ * STORM-2946: Upgrade to HBase 2.0
+ * STORM-2960 Stress importance of setting up proper OS account for Storm processes
