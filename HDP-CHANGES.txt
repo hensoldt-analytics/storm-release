@@ -1,4 +1,10 @@
 Changes only in Hortonworks github and not in Apache Storm release 1.0.2
+ * BUG-120513: Bump activemq version to 5.15.9
+ * BUG-120514: update jackson version to 2.9.9
+ * STORM-3123: add support for Kafka security config in storm-kafka-monitor
+ * STORM-3046: Ensure KafkaTridentSpoutEmitter handles empty batches correctly
+ * BUG-117987: Upgrade to thrift 0.12.0
+ * BUG-118274: Upgrade jackson to 2.9.8
  * BUG-104396: Include Google Connector in Storm
  * STORM-1839: Kinesis Spout
  * STORM-1694: Kafka Spout Trident Implementation Using New Kafka Consumer API
