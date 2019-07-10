@@ -108,4 +108,9 @@ public class FilterByMetricName implements MetricsFilter {
 
         return !valueWhenMatched;
     }
+
+    @Override
+    public boolean test(IMetricsConsumer.DataPoint dataPoint) {
+        return this.apply(dataPoint);
+    }
 }
