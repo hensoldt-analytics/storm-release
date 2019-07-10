@@ -255,6 +255,7 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <scope>compile</scope>
+            <version>${guava.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>

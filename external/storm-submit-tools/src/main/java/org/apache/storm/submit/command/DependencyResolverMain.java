@@ -130,6 +130,10 @@ public class DependencyResolverMain {
             public boolean apply(ArtifactResult artifactResult) {
                 return artifactResult.isMissing();
             }
+            @Override
+            public boolean test(ArtifactResult artifactResult) {
+                return apply(artifactResult);
+            }
         });
     }
 
