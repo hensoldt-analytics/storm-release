@@ -273,6 +273,7 @@
         <calcite.version>1.11.0</calcite.version>
         <caffeine.version>2.3.5</caffeine.version>
         <jackson.version>2.9.9</jackson.version>
+        <jackson.databind.version>2.9.9.1</jackson.databind.version>
         <maven-surefire.version>2.18.1</maven-surefire.version>
         <!-- Kafka version used by old storm-kafka spout code -->
         <storm.kafka.version>0.10.0.2.5.2.0-70</storm.kafka.version>
@@ -1096,7 +1097,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${jackson.version}</version>
+                <version>${jackson.databind.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
