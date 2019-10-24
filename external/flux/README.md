@@ -152,7 +152,6 @@ The example below illustrates Flux usage with the Maven shade plugin:
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>
-            <version>1.4</version>
             <configuration>
                 <createDependencyReducedPom>true</createDependencyReducedPom>
             </configuration>

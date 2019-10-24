@@ -138,7 +138,6 @@ and then generate an uber jar with all the dependencies.
  <plugin>
      <groupId>org.apache.maven.plugins</groupId>
      <artifactId>maven-shade-plugin</artifactId>
-     <version>2.4.1</version>
      <executions>
          <execution>
              <phase>package</phase>
