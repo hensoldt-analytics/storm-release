@@ -80,7 +80,9 @@ public class TestHdfsDataSourcesProvider {
 
   @After
   public void shutDown() throws IOException {
-    hdfsCluster.shutdown();
+    if (hdfsCluster != null) {
+      hdfsCluster.shutdown();
+    }
   }
 
   @SuppressWarnings("unchecked")

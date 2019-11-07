@@ -24,7 +24,7 @@ import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.SpoutWithMockedConsumerSetupHelper;
-import org.apache.storm.shade.org.json.simple.JSONValue;
+import org.json.simple.JSONValue;
 import org.junit.Test;
 
 public class KafkaTridentSpoutBatchMetadataTest {
