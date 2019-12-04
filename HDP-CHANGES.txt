@@ -42,3 +42,10 @@ Changes only in Hortonworks github and not in Apache Storm release 1.2.1
  * BUG-97011: exclude avro jar from storm-autocreds
  * STORM-2946: Upgrade to HBase 2.0
  * STORM-2960 Stress importance of setting up proper OS account for Storm processes
+ * BUG-121183 Upgrade to jackson-databind 2.9.9.1
+ * BUG-121107 Use guava version 28.0-jre
+ * BUG-121930 kafka spout lag on UI needs some cleanup - CVE-2018-11779
+ * BUG-122098 Update jackson-databind to version 2.10.0
+ * BUG-122253 fix Error creating shaded jar, set shade plugin version in parent pom
+ * BUG-122305 fix unit test failures
+
