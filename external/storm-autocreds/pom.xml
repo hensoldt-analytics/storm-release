@@ -275,7 +275,6 @@
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-exec</artifactId>
             <version>${hive.version}</version>
-            <classifier>core</classifier>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.avro</groupId>
